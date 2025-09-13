@@ -78,7 +78,7 @@ class LanguageProvider extends ChangeNotifier {
     );
   }
 
-  Future<void> setLanguage(BuildContext context, String languageCode) async {
+  Future<void> setLanguage(String languageCode) async {
     try {
       languageCode = languageCode.toLowerCase();
 
@@ -91,10 +91,6 @@ class LanguageProvider extends ChangeNotifier {
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(key, languageCode);
-
-      // Update the app locale
-      final newLocale = Locale(language.languageCode, language.countryCode);
-      SpaceXApp.setLocale(context, newLocale);
 
       notifyListeners();
     } catch (e) {
@@ -116,6 +112,38 @@ class LanguageProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error setting language without locale change: $e');
     }
+  }
+
+  /// Toggle between available languages
+  Future<void> toggleLanguage() async {
+    final currentIndex = _languages.indexOf(_selectedLanguage);
+    final nextIndex = (currentIndex + 1) % _languages.length;
+    final nextLanguage = _languages[nextIndex];
+    
+    _selectedLanguage = nextLanguage;
+    await _saveLanguage(nextLanguage.languageCode);
+    
+    notifyListeners();
+  }
+
+  Future<void> _saveLanguage(String languageCode) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(key, languageCode);
+    } catch (e) {
+      debugPrint('Error saving language: $e');
+    }
+  }
+
+  // Static callback to update app locale
+  static void Function(Locale)? _localeCallback;
+  
+  static void setLocaleCallback(void Function(Locale) callback) {
+    _localeCallback = callback;
+  }
+  
+  void _updateAppLocale(Locale locale) {
+    _localeCallback?.call(locale);
   }
 }
 

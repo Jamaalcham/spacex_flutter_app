@@ -5,10 +5,13 @@ import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'core/utils/theme.dart';
+import 'core/utils/app_theme.dart';
 import 'core/utils/localization/spacex_localization.dart';
 import 'presentation/providers/theme_provider.dart';
 import 'presentation/providers/language_provider.dart';
+import 'presentation/providers/mission_provider.dart';
+import 'presentation/providers/rocket_provider.dart';
+import 'presentation/providers/launch_provider.dart';
 import 'presentation/screens/splash_screen.dart';
 
 void main() async {
@@ -41,6 +44,15 @@ class _SpaceXAppState extends State<SpaceXApp> {
     super.initState();
     _languageProvider = LanguageProvider();
     _initializeLanguage();
+    
+    // Set up locale callback for language changes
+    LanguageProvider.setLocaleCallback((newLocale) {
+      if (mounted) {
+        setState(() {
+          _locale = newLocale;
+        });
+      }
+    });
   }
 
   Future<void> _initializeLanguage() async {
@@ -64,22 +76,30 @@ class _SpaceXAppState extends State<SpaceXApp> {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => _languageProvider),
-        // TODO: Add other providers as you implement them
-        // ChangeNotifierProvider(create: (_) => MissionProvider()),
-        // ChangeNotifierProvider(create: (_) => RocketProvider()),
-        // ChangeNotifierProvider(create: (_) => LaunchProvider()),
+        ChangeNotifierProvider(create: (_) => MissionProvider()),
+        ChangeNotifierProvider(create: (_) => RocketProvider()),
+        ChangeNotifierProvider(create: (_) => LaunchProvider()),
       ],
       child: Consumer2<ThemeProvider, LanguageProvider>(
         builder: (context, themeProvider, languageProvider, child) {
+          // Update locale when language provider changes
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_locale != languageProvider.locale) {
+              setState(() {
+                _locale = languageProvider.locale;
+              });
+            }
+          });
+          
           return Sizer(
             builder: (context, orientation, deviceType) {
               return GetMaterialApp(
                 title: 'SpaceX Flutter App',
                 debugShowCheckedModeBanner: false,
-                theme: AppTheme.lightTheme,
-                darkTheme: AppTheme.darkTheme,
+                theme: themeProvider.lightTheme,
+                darkTheme: themeProvider.darkTheme,
                 themeMode: themeProvider.themeMode,
-                locale: _locale,
+                locale: languageProvider.locale, // Use provider's locale directly
                 localizationsDelegates: const [
                   SpaceXLocalization.delegate,
                   GlobalMaterialLocalizations.delegate,
