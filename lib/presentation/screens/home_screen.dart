@@ -103,20 +103,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final isDark = themeProvider.isDarkMode;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? [
-                    const Color(0xFF0F172A), // Deep space
-                    const Color(0xFF1E293B), // Nebula
-                    const Color(0xFF334155), // Cosmic dust
-                  ]
-                : [
-                    const Color(0xFFF8FAFC),
-                    const Color(0xFFE2E8F0),
+      body: SafeArea(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [
+                      const Color(0xFF0F172A), // Deep space
+                      const Color(0xFF1E293B), // Nebula
+                      const Color(0xFF334155), // Cosmic dust
+                    ]
+                  : [
+                      const Color(0xFFF8FAFC),
+                      const Color(0xFFE2E8F0),
                     const Color(0xFFCBD5E1),
                   ],
           ),
@@ -157,8 +158,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         physics: const NeverScrollableScrollPhysics(),
                         crossAxisCount: 2,
                         childAspectRatio: 1.1,
-                        mainAxisSpacing: AppSpacing.s,
-                        crossAxisSpacing: AppSpacing.s,
+                        mainAxisSpacing: 3.w,
+                        crossAxisSpacing: 3.w,
                         children: [
                           ModernStatCard(
                             title: 'Total Missions',
@@ -264,7 +265,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ),
       ),
-    );
+    ));
   }
 
   /// Modern header with enhanced design
@@ -320,13 +321,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       getTranslated(context, 'app_title') ?? 'SpaceX Explorer',
                       style: AppTypography.getHeadline(isDark).copyWith(
                         fontWeight: FontWeight.w800,
-                        fontSize: 6.w,
+                        fontSize: 22.sp,
                       ),
                     ),
                     Text(
                       getTranslated(context, 'app_subtitle') ?? 'Discover the future of space exploration',
                       style: AppTypography.getBody(isDark).copyWith(
-                        fontSize: 3.5.w,
+                        fontSize: 14.sp,
                         color: isDark 
                           ? Colors.white70 
                           : Colors.black54,
@@ -351,7 +352,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       child: Icon(
                         isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
                         color: isDark ? Colors.white : Colors.black87,
-                        size: 6.w,
+                        size: 20.sp,
                       ),
                     ),
                   ),
@@ -414,7 +415,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             child: Icon(
               icon,
               color: const Color(0xFF8B5CF6),
-              size: 6.w,
+              size: 20.sp,
             ),
           ),
           AppSpacing.gapHorizontalM,
@@ -443,6 +444,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ],
       ),
     );
+
   }
 
 }

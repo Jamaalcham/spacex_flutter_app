@@ -145,16 +145,15 @@ class LaunchQueries {
     }
   ''';
 
-  /// Query to fetch a specific launch by flight number
+  /// Query to fetch a specific launch by mission name
   /// 
   /// Variables:
-  /// - flight_number: Int! (required) - The flight number to fetch
+  /// - mission_name: String! (required) - The mission name to fetch
   /// 
   /// Returns: Single launch with complete details
-  static const String getLaunchByFlightNumber = '''
-    query GetLaunchByFlightNumber(\$flight_number: Int!) {
-      launch(flight_number: \$flight_number) {
-        flight_number
+  static const String getLaunchByMissionName = '''
+    query GetLaunchByMissionName(\$mission_name: String!) {
+      launch(find: { mission_name: \$mission_name }) {
         mission_name
         mission_id
         launch_year
@@ -212,7 +211,6 @@ class LaunchQueries {
   static const String getLaunchesWithPagination = '''
     query GetLaunchesWithPagination(\$limit: Int, \$offset: Int, \$order: String) {
       launches(limit: \$limit, offset: \$offset, order: \$order) {
-        flight_number
         mission_name
         launch_year
         launch_date_unix
@@ -246,7 +244,6 @@ class LaunchQueries {
   static const String getLaunchListItems = '''
     query GetLaunchListItems {
       launches {
-        flight_number
         mission_name
         launch_year
         launch_date_unix
@@ -275,7 +272,6 @@ class LaunchQueries {
   static const String searchLaunches = '''
     query SearchLaunches(\$searchTerm: String!) {
       launches(find: { mission_name: { \$regex: \$searchTerm, \$options: "i" } }) {
-        flight_number
         mission_name
         launch_year
         launch_date_unix
@@ -310,7 +306,6 @@ class LaunchQueries {
   static const String getLaunchesByYear = '''
     query GetLaunchesByYear(\$year: String!) {
       launches(find: { launch_year: \$year }) {
-        flight_number
         mission_name
         launch_year
         launch_date_unix
@@ -339,7 +334,6 @@ class LaunchQueries {
   static const String getSuccessfulLaunches = '''
     query GetSuccessfulLaunches {
       launches(find: { launch_success: true }) {
-        flight_number
         mission_name
         launch_year
         launch_date_unix
@@ -367,7 +361,6 @@ class LaunchQueries {
   static const String getFailedLaunches = '''
     query GetFailedLaunches {
       launches(find: { launch_success: false }) {
-        flight_number
         mission_name
         launch_year
         launch_date_unix
@@ -401,7 +394,6 @@ class LaunchQueries {
   static const String getLaunchesWithImages = '''
     query GetLaunchesWithImages {
       launches(find: { "links.flickr_images": { \$ne: [] } }) {
-        flight_number
         mission_name
         launch_date_unix
         launch_success
@@ -423,7 +415,6 @@ class LaunchQueries {
   static const String getNextLaunch = '''
     query GetNextLaunch {
       launchNext {
-        flight_number
         mission_name
         launch_date_unix
         launch_date_utc
@@ -458,7 +449,6 @@ class LaunchQueries {
   static const String getLatestLaunch = '''
     query GetLatestLaunch {
       launchLatest {
-        flight_number
         mission_name
         launch_date_unix
         launch_date_utc

@@ -3,16 +3,12 @@ import 'package:provider/provider.dart';
 import 'package:sizer/sizer.dart';
 import 'package:get/get.dart';
 
-import '../providers/mission_provider.dart';
-import '../widgets/common/loading_widget.dart';
-import '../widgets/common/spacex_card.dart';
-import '../widgets/common/animated_components.dart';
-import '../widgets/common/error_widgets.dart';
-import '../widgets/common/space_themed_components.dart';
 import '../../core/utils/colors.dart';
-import '../../core/utils/app_theme.dart';
-import '../../core/utils/localization/language_constants.dart';
 import '../../domain/entities/mission_entity.dart';
+import '../providers/mission_provider.dart';
+import '../widgets/common/modern_card.dart';
+import '../widgets/common/spacex_header.dart';
+import '../widgets/common/network_error_widget.dart';
 
 /// Mission Explorer Screen - Task 2.1
 /// 
@@ -63,523 +59,418 @@ class _MissionsScreenState extends State<MissionsScreen> {
     context.read<MissionProvider>().searchMissions(query);
   }
 
-  /// Handles pull-to-refresh
-  Future<void> _onRefresh() async {
-    await context.read<MissionProvider>().refreshMissions();
-  }
-
   /// Shows filter bottom sheet
   void _showFilterSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _buildFilterSheet(),
+      builder: (context) => Container(
+        padding: EdgeInsets.all(4.w),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Filter Options',
+              style: TextStyle(
+                fontSize: 5.w,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 4.w),
+            Text('Filter functionality coming soon!'),
+            SizedBox(height: 4.w),
+            ElevatedButton(
+              onPressed: () => Get.back(),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          SpaceHeader(
-            title: getTranslated(context, 'missions_title') ?? 'Missions',
-            subtitle: 'Explore SpaceX mission objectives',
-            icon: Icons.explore,
-            showBackButton: true,
-            trailing: IconButton(
-              icon: Icon(_isGridView ? Icons.list : Icons.grid_view),
-              onPressed: () {
-                setState(() {
-                  _isGridView = !_isGridView;
-                });
-              },
-            ),
-          ),
-          Expanded(
-            child: Consumer<MissionProvider>(
-        builder: (context, provider, child) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-          
-          if (provider.isLoading && provider.missions.isEmpty) {
-            return ShimmerList(
-              itemCount: 6,
-              itemHeight: 18.h,
-              isDark: isDark,
-            );
-          }
-
-          if (provider.error != null && provider.missions.isEmpty) {
-            return NetworkErrorWidget(
-              onRetry: () => provider.fetchMissions(),
-            );
-          }
-
-          if (provider.isEmpty) {
-            return SpaceEmptyState(
-              title: 'No Missions Found',
-              subtitle: 'No SpaceX missions match your current search criteria. Try adjusting your filters or search terms.',
-              icon: Icons.explore_off,
-              actionText: 'Refresh',
-              onAction: () => provider.fetchMissions(),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: _onRefresh,
-            backgroundColor: isDark ? AppColors.darkCard : AppColors.lightCard,
-            color: AppColors.cosmicBlue,
-            child: Column(
-              children: [
-                // Search bar (if visible)
-                if (_showSearch) _buildSearchBar(),
-                
-                // Filter chips
-                if (provider.selectedManufacturers.isNotEmpty || 
-                    provider.searchQuery.isNotEmpty)
-                  _buildActiveFilters(provider),
-                
-                // Mission count and view toggle
-                _buildHeader(provider),
-                
-                // Missions list/grid
-                Expanded(
-                  child: provider.isGridView
-                      ? _buildGridView(provider)
-                      : _buildListView(provider),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Builds the app bar with search and filter actions
-  PreferredSizeWidget _buildAppBar() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    return AppBar(
-      title: Text(
-        getTranslated(context, 'missions') ?? 'Missions',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: isDark ? Colors.white : AppColors.lightText,
-          fontSize: 18.sp,
+    return Scaffold(
+      body: SafeArea(
+        top: false,
+        child: AppColors.getScreenAccentOverlay(
+          isDark: isDark,
+          screenType: AppScreenType.missions,
+          child: Container(
+            decoration: AppColors.getScreenBackground(
+              isDark: isDark,
+              screenType: AppScreenType.missions,
+            ),
+            child: CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                // Premium SpaceX Header
+                SliverToBoxAdapter(
+                  child: Consumer<MissionProvider>(
+                    builder: (context, provider, child) {
+                      final totalMissions = provider.missions.length;
+                      final manufacturerCount = provider.missions.fold<Set<String>>({}, (set, mission) => set..addAll(mission.manufacturers)).length;
+                      final missionsWithLinks = provider.missions.where((m) => m.hasLinks).length;
+                      
+                      return SpaceXHeader(
+                        title: 'Mission Explorer',
+                        subtitle: 'Advanced SpaceX Mission Analytics',
+                        icon: Icons.explore_rounded,
+                        primaryColor: AppColors.missionGreen,
+                        secondaryColor: AppColors.spaceBlue,
+                        showViewToggle: true,
+                        isGridView: _isGridView,
+                        onSearchTap: () => setState(() => _showSearch = !_showSearch),
+                        onViewToggle: () => setState(() => _isGridView = !_isGridView),
+                      );
+                    },
+                  ),
+                ),
+              
+              // Stats Section
+              SliverToBoxAdapter(
+                child: Container(
+                  margin: EdgeInsets.all(4.w),
+                  child: Consumer<MissionProvider>(
+                    builder: (context, provider, child) {
+                      final totalMissions = provider.missions.length;
+                      final manufacturerCount = provider.missions.fold<Set<String>>({}, (set, mission) => set..addAll(mission.manufacturers)).length;
+                      final missionsWithLinks = provider.missions.where((m) => m.hasLinks).length;
+                      
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              'Total\nMissions',
+                              totalMissions.toString(),
+                              Icons.explore,
+                              AppColors.missionGreen,
+                            ),
+                          ),
+                          SizedBox(width: 3.w),
+                          Expanded(
+                            child: _buildStatCard(
+                              'Partners\nInvolved',
+                              manufacturerCount.toString(),
+                              Icons.business,
+                              AppColors.rocketOrange,
+                            ),
+                          ),
+                          SizedBox(width: 3.w),
+                          Expanded(
+                            child: _buildStatCard(
+                              'Missions with\nLinks',
+                              missionsWithLinks.toString(),
+                              Icons.link,
+                              AppColors.purpleAccent,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+              
+              // Search Bar (when visible)
+              if (_showSearch)
+                SliverToBoxAdapter(
+                  child: ModernSearchBar(
+                    hintText: 'Search missions...',
+                    isDark: isDark,
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                    onFilterTap: _showFilterSheet,
+                  ),
+                ),
+              
+              // Mission Content
+              Consumer<MissionProvider>(
+                builder: (context, provider, child) {
+                  if (provider.isLoading && provider.missions.isEmpty) {
+                    return SliverToBoxAdapter(
+                      child: Container(
+                        height: 50.h,
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  
+                  if (provider.error != null && provider.missions.isEmpty) {
+                    return SliverToBoxAdapter(
+                      child: NetworkErrorWidget(
+                        onRetry: () => provider.fetchMissions(),
+                      ),
+                    );
+                  }
+                  
+                  return _buildMissionContent(provider, isDark);
+                },
+              ),
+            ],
+          ),
         ),
       ),
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      flexibleSpace: Container(
+    ));
+  }
+
+  /// Builds individual stat cards
+  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+    return Expanded(
+      child: Container(
+        padding: EdgeInsets.all(3.w),
         decoration: BoxDecoration(
-          gradient: AppColors.nebulaGradient,
-        ),
-      ),
-      actions: [
-        // Search toggle button
-        IconButton(
-          icon: Icon(_showSearch ? Icons.close : Icons.search),
-          onPressed: () {
-            setState(() {
-              _showSearch = !_showSearch;
-              if (!_showSearch) {
-                _searchController.clear();
-                context.read<MissionProvider>().searchMissions('');
-              }
-            });
-          },
-        ),
-        
-        // Filter button
-        IconButton(
-          icon: const Icon(Icons.filter_list),
-          onPressed: _showFilterSheet,
-        ),
-        
-        // View mode toggle
-        Consumer<MissionProvider>(
-          builder: (context, provider, child) {
-            return IconButton(
-              icon: Icon(provider.isGridView ? Icons.list : Icons.grid_view),
-              onPressed: () => provider.toggleViewMode(),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  /// Builds the search bar
-  Widget _buildSearchBar() {
-    return Container(
-      padding: EdgeInsets.all(4.w),
-      color: AppColors.primary.withOpacity(0.1),
-      child: TextField(
-        controller: _searchController,
-        onChanged: _onSearchChanged,
-        decoration: InputDecoration(
-          hintText: getTranslated(context, 'search_hint') ?? 
-                   'Search missions...',
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchController.clear();
-                    _onSearchChanged('');
-                  },
-                )
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(25),
-            borderSide: BorderSide.none,
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: color.withOpacity(0.3),
+            width: 1,
           ),
-          filled: true,
-          fillColor: Colors.white,
         ),
-      ),
-    );
-  }
-
-  /// Builds active filters display
-  Widget _buildActiveFilters(MissionProvider provider) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-      child: Row(
-        children: [
-          Expanded(
-            child: Wrap(
-              spacing: 2.w,
-              children: [
-                // Search query chip
-                if (provider.searchQuery.isNotEmpty)
-                  Chip(
-                    label: Text('Search: ${provider.searchQuery}'),
-                    deleteIcon: const Icon(Icons.close, size: 16),
-                    onDeleted: () {
-                      _searchController.clear();
-                      provider.searchMissions('');
-                    },
-                  ),
-                
-                // Manufacturer filter chips
-                ...provider.selectedManufacturers.map((manufacturer) =>
-                  Chip(
-                    label: Text(manufacturer),
-                    deleteIcon: const Icon(Icons.close, size: 16),
-                    onDeleted: () {
-                      final updatedManufacturers = List<String>.from(
-                          provider.selectedManufacturers)
-                        ..remove(manufacturer);
-                      provider.filterByManufacturers(updatedManufacturers);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Clear all filters button
-          TextButton(
-            onPressed: () {
-              _searchController.clear();
-              provider.clearFilters();
-            },
-            child: Text(
-              getTranslated(context, 'clear_filters') ?? 'Clear All',
-              style: const TextStyle(color: AppColors.primary),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Builds header with mission count and view toggle info
-  Widget _buildHeader(MissionProvider provider) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            '${provider.missionCount} ${getTranslated(context, 'missions') ?? 'missions'}',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          
-          if (provider.hasMoreData && !provider.isLoadingMore)
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 5.w),
+            SizedBox(height: 1.w),
             Text(
-              getTranslated(context, 'pull_to_refresh') ?? 'Pull to refresh',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textSecondary,
+              value,
+              style: TextStyle(
+                fontSize: 4.w,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
               ),
             ),
-        ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 2.5.w,
+                color: Colors.white70,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  /// Builds list view for missions
-  Widget _buildListView(MissionProvider provider) {
-    return ListView.builder(
-      controller: _scrollController,
-      padding: EdgeInsets.only(bottom: 2.h),
-      itemCount: provider.missions.length + (provider.isLoadingMore ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index >= provider.missions.length) {
-          return Padding(
-            padding: EdgeInsets.all(4.w),
-            child: Center(
-              child: CircularProgressIndicator(
-                color: AppColors.cosmicBlue,
-                strokeWidth: 2,
-              ),
-            ),
-          );
-        }
-
-        final mission = provider.missions[index];
-        return MissionCard(
-          missionName: mission.name,
-          description: mission.description,
-          manufacturers: mission.manufacturers,
-          onTap: () => _navigateToMissionDetails(mission),
-        );
-      },
-    );
+  /// Builds the mission content based on view type
+  Widget _buildMissionContent(MissionProvider provider, bool isDark) {
+    if (_isGridView) {
+      return SliverPadding(
+        padding: EdgeInsets.all(4.w),
+        sliver: SliverGrid(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.8,
+            crossAxisSpacing: 4.w,
+            mainAxisSpacing: 4.w,
+          ),
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              if (index >= provider.missions.length) {
+                return provider.isLoading
+                    ? Container(
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink();
+              }
+              return _buildMissionGridCard(provider.missions[index], isDark);
+            },
+            childCount: provider.missions.length + (provider.isLoading ? 1 : 0),
+          ),
+        ),
+      );
+    } else {
+      return SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            if (index >= provider.missions.length) {
+              return provider.isLoading
+                  ? Container(
+                      height: 10.h,
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink();
+            }
+            return _buildMissionListCard(provider.missions[index], isDark);
+          },
+          childCount: provider.missions.length + (provider.isLoading ? 1 : 0),
+        ),
+      );
+    }
   }
 
-  /// Builds grid view for missions
-  Widget _buildGridView(MissionProvider provider) {
-    return GridView.builder(
-      controller: _scrollController,
-      padding: EdgeInsets.all(2.w),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.8,
-        crossAxisSpacing: 2.w,
-        mainAxisSpacing: 2.w,
-      ),
-      itemCount: provider.missions.length + (provider.isLoadingMore ? 2 : 0),
-      itemBuilder: (context, index) {
-        if (index >= provider.missions.length) {
-          return Card(
-            child: Container(
-              padding: EdgeInsets.all(4.w),
-              child: const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.cosmicBlue,
-                  strokeWidth: 2,
-                ),
-              ),
-            ),
-          );
-        }
-
-        final mission = provider.missions[index];
-        return _buildGridMissionCard(mission);
-      },
-    );
-  }
-
-  /// Builds individual mission card for grid view
-  Widget _buildGridMissionCard(MissionEntity mission) {
-    return SpaceXCard(
-      title: mission.name,
-      subtitle: mission.description,
-      height: 25.h,
-      padding: EdgeInsets.all(3.w),
-      onTap: () => _navigateToMissionDetails(mission),
+  /// Builds mission grid card with modern design
+  Widget _buildMissionGridCard(MissionEntity mission, bool isDark) {
+    return ModernCard(
+      isDark: isDark,
+      onTap: () => _navigateToMissionDetail(mission),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Mission icon
+          // Mission status indicator
           Container(
-            width: 15.w,
-            height: 15.w,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: AppColors.spaceGradient,
+            padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 1.w),
+            decoration: BoxDecoration(
+              color: mission.hasLinks
+                  ? AppColors.missionGreen
+                  : AppColors.rocketOrange,
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(
-              Icons.rocket_launch,
-              color: Colors.white,
-              size: 24,
+            child: Text(
+              mission.hasLinks ? 'ACTIVE' : 'PLANNED',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 2.5.w,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-          
-          SizedBox(height: 2.h),
-          
-          // Mission name
+          SizedBox(height: 3.w),
           Text(
             mission.name,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+            style: TextStyle(
+              fontSize: 4.w,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : Colors.black87,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          
-          SizedBox(height: 1.h),
-          
-          // Description
-          if (mission.hasDescription)
-            Expanded(
-              child: Text(
-                mission.description!,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          SizedBox(height: 2.w),
+          Text(
+            mission.description ?? 'No description available',
+            style: TextStyle(
+              fontSize: 3.w,
+              color: isDark ? Colors.white70 : Colors.black54,
+            ),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const Spacer(),
+          Row(
+            children: [
+              Icon(
+                Icons.factory,
+                size: 3.w,
+                color: AppColors.textSecondary,
+              ),
+              SizedBox(width: 1.w),
+              Text(
+                '${mission.manufacturerCount} manufacturers',
+                style: TextStyle(
+                  fontSize: 2.5.w,
                   color: AppColors.textSecondary,
                 ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          
-          // Manufacturer count
-          if (mission.manufacturers.isNotEmpty) ...[
-            const Spacer(),
-            Text(
-              '${mission.manufacturerCount} manufacturers',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+            ],
+          ),
         ],
       ),
     );
   }
 
-  /// Builds filter bottom sheet
-  Widget _buildFilterSheet() {
-    return Consumer<MissionProvider>(
-      builder: (context, provider, child) {
-        final allManufacturers = provider.getAllManufacturers();
-        
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  /// Builds mission list card with modern design
+  Widget _buildMissionListCard(MissionEntity mission, bool isDark) {
+    return ModernCard(
+      isDark: isDark,
+      onTap: () => _navigateToMissionDetail(mission),
+      margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.w),
+      child: Row(
+        children: [
+          ModernIconContainer(
+            icon: mission.hasLinks
+                ? Icons.check_circle
+                : Icons.schedule,
+            gradientColors: mission.hasLinks
+                ? [AppColors.missionGreen, AppColors.missionGreen]
+                : [AppColors.rocketOrange, AppColors.rocketOrange],
+            size: 2.w,
+            iconSize: 5.w,
           ),
-          padding: EdgeInsets.all(4.w),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Handle bar
-              Center(
-                child: Container(
-                  width: 12.w,
-                  height: 0.5.h,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(10),
+          SizedBox(width: 4.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  mission.name,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
                 ),
-              ),
-              
-              SizedBox(height: 2.h),
-              
-              // Title
-              Text(
-                getTranslated(context, 'filter') ?? 'Filter Missions',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
+                SizedBox(height: 1.w),
+                Text(
+                  mission.description ?? 'No description available',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              
-              SizedBox(height: 3.h),
-              
-              // Manufacturers section
-              Text(
-                getTranslated(context, 'manufacturers') ?? 'Manufacturers',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              
-              SizedBox(height: 1.h),
-              
-              // Manufacturers chips
-              Wrap(
-                spacing: 2.w,
-                children: allManufacturers.map((manufacturer) {
-                  final isSelected = provider.selectedManufacturers
-                      .contains(manufacturer);
-                  
-                  return FilterChip(
-                    label: Text(manufacturer),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      final updatedManufacturers = List<String>.from(
-                          provider.selectedManufacturers);
-                      
-                      if (selected) {
-                        updatedManufacturers.add(manufacturer);
-                      } else {
-                        updatedManufacturers.remove(manufacturer);
-                      }
-                      
-                      provider.filterByManufacturers(updatedManufacturers);
-                    },
-                  );
-                }).toList(),
-              ),
-              
-              SizedBox(height: 4.h),
-              
-              // Action buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        provider.clearFilters();
-                        Get.back();
-                      },
+                SizedBox(height: 2.w),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.factory,
+                      size: 12.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                    SizedBox(width: 1.w),
+                    Expanded(
                       child: Text(
-                        getTranslated(context, 'clear_filters') ?? 'Clear All',
+                        mission.manufacturersString,
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  ),
-                  
-                  SizedBox(width: 4.w),
-                  
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Get.back(),
-                      child: Text(
-                        getTranslated(context, 'apply_filters') ?? 'Apply',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              
-              SizedBox(height: 2.h),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
-        );
-      },
+          Icon(
+            Icons.arrow_forward_ios,
+            size: 16.sp,
+            color: AppColors.textSecondary,
+          ),
+        ],
+      ),
     );
   }
 
-  /// Navigates to mission details screen
-  void _navigateToMissionDetails(MissionEntity mission) {
-    // TODO: Implement navigation to mission details screen
+  /// Navigates to mission detail screen
+  void _navigateToMissionDetail(MissionEntity mission) {
     Get.snackbar(
       'Mission Selected',
       mission.name,
-      backgroundColor: AppColors.primary,
+      backgroundColor: AppColors.spaceBlue.withOpacity(0.8),
       colorText: Colors.white,
     );
   }

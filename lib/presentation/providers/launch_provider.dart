@@ -38,6 +38,8 @@ class LaunchProvider extends ChangeNotifier {
 
   // Getters
   List<LaunchEntity> get launches => _filteredLaunches;
+  List<LaunchEntity> get upcomingLaunches => _launches.where((l) => l.upcoming == true).toList();
+  List<LaunchEntity> get pastLaunches => _launches.where((l) => l.upcoming == false).toList();
   bool get isLoading => _isLoading;
   bool get isLoadingMore => _isLoadingMore;
   String? get error => _error;

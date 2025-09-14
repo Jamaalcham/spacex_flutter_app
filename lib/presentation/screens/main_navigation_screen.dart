@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/utils/colors.dart';
 import '../../core/utils/app_theme.dart';
+import '../../core/utils/localization/language_constants.dart';
 import '../providers/mission_provider.dart';
 import '../providers/rocket_provider.dart';
 import '../providers/launch_provider.dart';
@@ -145,20 +146,30 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 ),
               ],
             ),
-            child: BottomNavigationBar(
-              currentIndex: _currentIndex,
-              onTap: _onTabTapped,
-              type: BottomNavigationBarType.fixed,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              selectedItemColor: AppColors.cosmicBlue,
-              unselectedItemColor: isDark 
-                  ? AppColors.darkTextSecondary 
-                  : AppColors.lightTextSecondary,
-              selectedFontSize: 12.sp,
-              unselectedFontSize: 10.sp,
-              selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w400),
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                bottomNavigationBarTheme: BottomNavigationBarThemeData(
+                  selectedLabelStyle: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : AppColors.spaceBlue,
+                    fontSize: 12.sp,
+                  ),
+                  unselectedLabelStyle: TextStyle(
+                    fontWeight: FontWeight.w400,
+                    fontSize: 10.sp,
+                  ),
+                  selectedItemColor: isDark ? Colors.white : AppColors.spaceBlue,
+                  unselectedItemColor: isDark 
+                      ? AppColors.darkTextSecondary 
+                      : AppColors.lightTextSecondary,
+                ),
+              ),
+              child: BottomNavigationBar(
+                currentIndex: _currentIndex,
+                onTap: _onTabTapped,
+                type: BottomNavigationBarType.fixed,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
               items: [
                 BottomNavigationBarItem(
                   icon: AnimatedContainer(
@@ -188,7 +199,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       color: Colors.white,
                     ),
                   ),
-                  label: 'Home',
+                  label: getTranslated(context, 'home') ?? 'Home',
                 ),
                 BottomNavigationBarItem(
                   icon: AnimatedContainer(
@@ -196,7 +207,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     padding: EdgeInsets.all(_currentIndex == 1 ? 1.w : 0),
                     decoration: _currentIndex == 1
                         ? BoxDecoration(
-                            gradient: AppColors.nebulaGradient,
+                            gradient: AppColors.spaceGradient,
                             borderRadius: BorderRadius.circular(8),
                           )
                         : null,
@@ -209,7 +220,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   activeIcon: Container(
                     padding: EdgeInsets.all(1.w),
                     decoration: BoxDecoration(
-                      gradient: AppColors.nebulaGradient,
+                      gradient: AppColors.spaceGradient,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -218,7 +229,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       color: Colors.white,
                     ),
                   ),
-                  label: 'Missions',
+                  label: getTranslated(context, 'missions') ?? 'Missions',
                 ),
                 BottomNavigationBarItem(
                   icon: AnimatedContainer(
@@ -226,7 +237,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     padding: EdgeInsets.all(_currentIndex == 2 ? 1.w : 0),
                     decoration: _currentIndex == 2
                         ? BoxDecoration(
-                            gradient: AppColors.rocketGradient,
+                            gradient: AppColors.spaceGradient,
                             borderRadius: BorderRadius.circular(8),
                           )
                         : null,
@@ -239,7 +250,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   activeIcon: Container(
                     padding: EdgeInsets.all(1.w),
                     decoration: BoxDecoration(
-                      gradient: AppColors.rocketGradient,
+                      gradient: AppColors.spaceGradient,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -248,7 +259,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       color: Colors.white,
                     ),
                   ),
-                  label: 'Rockets',
+                  label: getTranslated(context, 'rockets') ?? 'Rockets',
                 ),
                 BottomNavigationBarItem(
                   icon: AnimatedContainer(
@@ -256,7 +267,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     padding: EdgeInsets.all(_currentIndex == 3 ? 1.w : 0),
                     decoration: _currentIndex == 3
                         ? BoxDecoration(
-                            gradient: AppColors.galaxyGradient,
+                            gradient: AppColors.spaceGradient,
                             borderRadius: BorderRadius.circular(8),
                           )
                         : null,
@@ -269,7 +280,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   activeIcon: Container(
                     padding: EdgeInsets.all(1.w),
                     decoration: BoxDecoration(
-                      gradient: AppColors.galaxyGradient,
+                      gradient: AppColors.spaceGradient,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -278,9 +289,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       color: Colors.white,
                     ),
                   ),
-                  label: 'Launches',
+                  label: getTranslated(context, 'launches') ?? 'Launches',
                 ),
               ],
+              ),
             ),
           ),
         );
