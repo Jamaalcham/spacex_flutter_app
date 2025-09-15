@@ -177,8 +177,8 @@ class _MissionsScreenState extends State<MissionsScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppColors.spaceBlue.withOpacity(0.1),
-                    AppColors.cosmicPurple.withOpacity(0.05),
+                    AppColors.spaceBlue.withValues(alpha:0.1),
+                    AppColors.cosmicPurple.withValues(alpha:0.05),
                   ],
                 ),
               ),
@@ -271,10 +271,10 @@ class _MissionsScreenState extends State<MissionsScreen> {
       child: Container(
         padding: EdgeInsets.all(3.w),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha:0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha:0.3),
             width: 1,
           ),
         ),
@@ -508,7 +508,7 @@ class _MissionsScreenState extends State<MissionsScreen> {
     Get.snackbar(
       'Mission Selected',
       mission.name,
-      backgroundColor: AppColors.spaceBlue.withOpacity(0.8),
+      backgroundColor: AppColors.spaceBlue.withValues(alpha:0.8),
       colorText: Colors.white,
     );
   }

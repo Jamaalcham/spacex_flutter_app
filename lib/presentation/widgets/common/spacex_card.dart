@@ -108,7 +108,7 @@ class _SpaceXCardState extends State<SpaceXCard> with SingleTickerProviderStateM
         borderRadius: BorderRadius.circular(widget.borderRadius),
         color: widget.backgroundColor ?? 
                (widget.isSelected 
-                ? AppColors.primary.withOpacity(0.1)
+                ? AppColors.primary.withValues(alpha:0.1)
                 : (isDark ? AppColors.darkSurface : AppColors.lightSurface)),
         child: InkWell(
           onTap: widget.isLoading ? null : widget.onTap,
@@ -224,7 +224,7 @@ class _SpaceXCardState extends State<SpaceXCard> with SingleTickerProviderStateM
             height: 2.h,
             width: 60.w,
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.3),
+              color: Colors.grey.withValues(alpha:0.3),
               borderRadius: BorderRadius.circular(1.w),
             ),
           ),
@@ -235,7 +235,7 @@ class _SpaceXCardState extends State<SpaceXCard> with SingleTickerProviderStateM
             height: 1.5.h,
             width: 80.w,
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.2),
+              color: Colors.grey.withValues(alpha:0.2),
               borderRadius: BorderRadius.circular(1.w),
             ),
           ),
@@ -245,7 +245,7 @@ class _SpaceXCardState extends State<SpaceXCard> with SingleTickerProviderStateM
             height: 1.5.h,
             width: 40.w,
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.2),
+              color: Colors.grey.withValues(alpha:0.2),
               borderRadius: BorderRadius.circular(1.w),
             ),
           ),
@@ -469,10 +469,10 @@ class LaunchCard extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
                 decoration: BoxDecoration(
                   color: launch.success == true 
-                      ? Colors.green.withOpacity(0.2)
+                      ? Colors.green.withValues(alpha:0.2)
                       : launch.success == false
-                          ? Colors.red.withOpacity(0.2)
-                          : Colors.orange.withOpacity(0.2),
+                          ? Colors.red.withValues(alpha:0.2)
+                          : Colors.orange.withValues(alpha:0.2),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: launch.success == true 

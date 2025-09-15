@@ -110,7 +110,7 @@ class AppTheme {
           backgroundColor: AppColors.cosmicBlue,
           foregroundColor: Colors.white,
           elevation: elevationMedium,
-          shadowColor: AppColors.cosmicBlue.withOpacity(0.3),
+          shadowColor: AppColors.cosmicBlue.withValues(alpha:0.3),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadiusMedium),
           ),
@@ -409,7 +409,7 @@ class AppTheme {
           backgroundColor: AppColors.cosmicBlue,
           foregroundColor: Colors.white,
           elevation: elevationMedium,
-          shadowColor: AppColors.cosmicBlue.withOpacity(0.3),
+          shadowColor: AppColors.cosmicBlue.withValues(alpha:0.3),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadiusMedium),
           ),

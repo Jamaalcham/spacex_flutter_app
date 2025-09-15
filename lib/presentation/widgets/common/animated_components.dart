@@ -41,7 +41,7 @@ class GlassContainer extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.1),
+            color: Colors.black.withValues(alpha:isDark ? 0.2 : 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -127,7 +127,7 @@ class _SpaceButtonState extends State<SpaceButton>
                 borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                 boxShadow: [
                   BoxShadow(
-                    color: (widget.gradient?.colors.first ?? AppColors.cosmicBlue).withOpacity(0.3),
+                    color: (widget.gradient?.colors.first ?? AppColors.cosmicBlue).withValues(alpha:0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -198,7 +198,7 @@ class StatusBadge extends StatelessWidget {
     Widget badge = Container(
       padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
         border: Border.all(color: color, width: 1),
       ),
@@ -439,7 +439,7 @@ class _SpaceFloatingActionButtonState extends State<SpaceFloatingActionButton>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.rocketOrange.withOpacity(0.3),
+                    color: AppColors.rocketOrange.withValues(alpha:0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -597,7 +597,7 @@ class _PulsingDotState extends State<PulsingDot>
           width: widget.size,
           height: widget.size,
           decoration: BoxDecoration(
-            color: widget.color.withOpacity(_animation.value),
+            color: widget.color.withValues(alpha:_animation.value),
             shape: BoxShape.circle,
           ),
         );

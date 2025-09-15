@@ -7,8 +7,9 @@ import '../../core/utils/colors.dart';
 import '../../domain/entities/rocket_entity.dart';
 import '../providers/rocket_provider.dart';
 import '../widgets/common/modern_card.dart';
-import '../widgets/common/spacex_header.dart';
 import '../widgets/common/network_error_widget.dart';
+import '../widgets/common/glass_background.dart';
+import '../widgets/common/custom_app_bar.dart';
 
 /// Rocket Gallery Screen - Task 2.2
 /// 
@@ -99,41 +100,42 @@ class _RocketsScreenState extends State<RocketsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
-      body: SafeArea(
-        top: false,
-        child: AppColors.getScreenAccentOverlay(
-          isDark: isDark,
-          screenType: AppScreenType.rockets,
-          child: Container(
-            decoration: AppColors.getScreenBackground(
-              isDark: isDark,
-              screenType: AppScreenType.rockets,
-            ),
-            child: CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                // Premium SpaceX Header
-                SliverToBoxAdapter(
-                  child: Consumer<RocketProvider>(
-                    builder: (context, provider, child) {
-                      final activeRockets = provider.rockets.where((r) => r.active == true).length;
-                      final totalRockets = provider.rockets.length;
-                      
-                      return SpaceXHeader(
-                        title: 'Rocket Gallery',
-                        subtitle: 'Immersive SpaceX Rocket Showcase',
-                        icon: Icons.rocket_rounded,
-                        primaryColor: AppColors.rocketOrange,
-                        secondaryColor: AppColors.launchRed,
-                        showViewToggle: false,
-                        isGridView: _isGridView,
-                        onSearchTap: () => setState(() => _showSearch = !_showSearch),
-                        onFilterTap: _showStatsSheet,
-                        onViewToggle: () => setState(() => _isGridView = !_isGridView),
-                      );
-                    },
+      body: GlassBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Custom App Bar matching settings screen
+              CustomAppBar.rockets(
+                onSearch: () => setState(() => _showSearch = !_showSearch),
+                onFilter: _showFilterSheet,
+                onViewToggle: () => setState(() => _isGridView = !_isGridView),
+                isGridView: _isGridView,
+              ),
+              
+              // Content
+              Expanded(
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  slivers: [
+              
+              // Subtitle Section
+              SliverToBoxAdapter(
+                child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                  child: Text(
+                    'Immersive SpaceX Rocket Showcase',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white.withValues(alpha:0.8)
+                          : const Color(0xFF4A5568),
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.3,
+                    ),
                   ),
                 ),
+              ),
               
               // Stats Section
               SliverToBoxAdapter(
@@ -181,19 +183,28 @@ class _RocketsScreenState extends State<RocketsScreen> {
                 ),
               ),
               
-              // Search Bar (when visible)
+              // Search bar if enabled
               if (_showSearch)
                 SliverToBoxAdapter(
-                  child: ModernSearchBar(
-                    hintText: 'Search rockets...',
-                    isDark: isDark,
-                    controller: _searchController,
-                    onChanged: _onSearchChanged,
-                    onFilterTap: _showStatsSheet,
+                  child: Container(
+                    margin: EdgeInsets.all(4.w),
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search rockets...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onChanged: (value) {
+                        // Implement search functionality
+                      },
+                    ),
                   ),
                 ),
               
-              // Rocket Content
+              // Rocket content
               Consumer<RocketProvider>(
                 builder: (context, provider, child) {
                   if (provider.isLoading && provider.rockets.isEmpty) {
@@ -223,20 +234,56 @@ class _RocketsScreenState extends State<RocketsScreen> {
             ],
           ),
         ),
-      ),
-    ));
+      ]
+          ),
+    )));
   }
 
+
+  /// Shows filter bottom sheet
+  void _showFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: EdgeInsets.all(4.w),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Filter Options',
+              style: TextStyle(
+                fontSize: 5.w,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 4.w),
+            Text('Filter functionality coming soon!'),
+            SizedBox(height: 4.w),
+            ElevatedButton(
+              onPressed: () => Get.back(),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   /// Builds individual stat cards
   Widget _buildStatCard(String label, String value, IconData icon, Color color) {
     return Container(
       padding: EdgeInsets.all(1.5.w),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(3.w),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha:0.3),
           width: 1,
         ),
       ),
@@ -514,7 +561,7 @@ class _RocketsScreenState extends State<RocketsScreen> {
     Get.snackbar(
       'Rocket Selected',
       rocket.name ?? 'Unknown Rocket',
-      backgroundColor: AppColors.rocketOrange.withOpacity(0.8),
+      backgroundColor: AppColors.rocketOrange.withValues(alpha:0.8),
       colorText: Colors.white,
     );
   }

@@ -79,7 +79,7 @@ class _LaunchpadsScreenState extends State<LaunchpadsScreen> {
                 Text(
                   'SpaceX Launch Facilities',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha:0.7),
                     fontSize: 12.sp,
                   ),
                 ),
@@ -99,10 +99,10 @@ class _LaunchpadsScreenState extends State<LaunchpadsScreen> {
           Container(
             padding: EdgeInsets.all(4.w),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppColors.primary.withOpacity(0.3),
+                color: AppColors.primary.withValues(alpha:0.3),
               ),
             ),
             child: Column(
@@ -125,7 +125,7 @@ class _LaunchpadsScreenState extends State<LaunchpadsScreen> {
                   'Launch facility data will be available soon.\nStay tuned for updates!',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha:0.7),
                   ),
                 ),
               ],

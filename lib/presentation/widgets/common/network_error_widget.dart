@@ -21,19 +21,19 @@ class NetworkErrorWidget extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      height: 50.h,
       padding: EdgeInsets.all(6.w),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             width: 20.w,
             height: 20.w,
             decoration: BoxDecoration(
-              color: AppColors.launchRed.withOpacity(0.1),
+              color: AppColors.launchRed.withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(10.w),
               border: Border.all(
-                color: AppColors.launchRed.withOpacity(0.3),
+                color: AppColors.launchRed.withValues(alpha:0.3),
                 width: 2,
               ),
             ),
@@ -44,7 +44,7 @@ class NetworkErrorWidget extends StatelessWidget {
             ),
           ),
           
-          SizedBox(height: 4.h),
+          SizedBox(height: 3.h),
           
           Text(
             'Connection Lost',
@@ -57,17 +57,19 @@ class NetworkErrorWidget extends StatelessWidget {
           
           SizedBox(height: 1.h),
           
-          Text(
-            message ?? 'Unable to connect to SpaceX servers.\nCheck your internet connection and try again.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: isDark ? Colors.white70 : Colors.black54,
-              height: 1.4,
+          Flexible(
+            child: Text(
+              message ?? 'Unable to connect to SpaceX servers.\nCheck your internet connection and try again.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: isDark ? Colors.white70 : Colors.black54,
+                height: 1.4,
+              ),
             ),
           ),
           
-          SizedBox(height: 4.h),
+          SizedBox(height: 3.h),
           
           if (onRetry != null)
             ElevatedButton.icon(

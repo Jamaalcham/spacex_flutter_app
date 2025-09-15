@@ -169,7 +169,7 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF4A90E2).withOpacity(0.5),
+                            color: const Color(0xFF4A90E2).withValues(alpha:0.5),
                             blurRadius: 20,
                             spreadRadius: 5,
                           ),
@@ -205,7 +205,7 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFFF6B6B).withOpacity(0.5),
+                            color: const Color(0xFFFF6B6B).withValues(alpha:0.5),
                             blurRadius: 15,
                             spreadRadius: 3,
                           ),
@@ -244,8 +244,8 @@ class _SplashScreenState extends State<SplashScreen>
                                 shape: BoxShape.circle,
                                 gradient: RadialGradient(
                                   colors: [
-                                    Colors.white.withOpacity(0.3),
-                                    Colors.white.withOpacity(0.1),
+                                    Colors.white.withValues(alpha:0.3),
+                                    Colors.white.withValues(alpha:0.1),
                                     Colors.transparent,
                                   ],
                                 ),
@@ -319,7 +319,7 @@ class _SplashScreenState extends State<SplashScreen>
                             'Discover the future of space exploration',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha:0.8),
                           letterSpacing: 1,
                         ),
                         textAlign: TextAlign.center,
@@ -336,7 +336,7 @@ class _SplashScreenState extends State<SplashScreen>
                             height: 60,
                             child: CircularProgressIndicator(
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white.withOpacity(0.8),
+                                Colors.white.withValues(alpha:0.8),
                               ),
                               strokeWidth: 3,
                             ),
@@ -388,7 +388,7 @@ class ParticlePainter extends CustomPainter {
     for (final particle in particles) {
       final animatedY = (particle.y + animationValue * particle.speed) % 1.0;
 
-      paint.color = Colors.white.withOpacity(particle.opacity * 0.6);
+      paint.color = Colors.white.withValues(alpha:particle.opacity * 0.6);
 
       canvas.drawCircle(
         Offset(particle.x * size.width, animatedY * size.height),

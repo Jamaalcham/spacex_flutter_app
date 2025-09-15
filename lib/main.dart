@@ -9,7 +9,7 @@ import 'core/utils/app_theme.dart';
 import 'core/utils/localization/spacex_localization.dart';
 import 'presentation/providers/theme_provider.dart';
 import 'presentation/providers/language_provider.dart';
-import 'presentation/providers/mission_provider.dart';
+import 'presentation/providers/capsule_provider.dart';
 import 'presentation/providers/rocket_provider.dart';
 import 'presentation/providers/launch_provider.dart';
 import 'presentation/screens/splash_screen.dart';
@@ -76,7 +76,7 @@ class _SpaceXAppState extends State<SpaceXApp> {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => _languageProvider),
-        ChangeNotifierProvider(create: (_) => MissionProvider()),
+        ChangeNotifierProvider(create: (_) => CapsuleProvider()),
         ChangeNotifierProvider(create: (_) => RocketProvider()),
         ChangeNotifierProvider(create: (_) => LaunchProvider()),
       ],

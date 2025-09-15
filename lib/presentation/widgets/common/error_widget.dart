@@ -57,7 +57,7 @@ class ErrorDisplayWidget extends StatelessWidget {
               height: 20.w,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _getErrorColor().withOpacity(0.1),
+                color: _getErrorColor().withValues(alpha:0.1),
               ),
               child: Icon(
                 icon ?? _getErrorIcon(),
@@ -95,7 +95,7 @@ class ErrorDisplayWidget extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(3.w),
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -266,10 +266,10 @@ class InlineErrorWidget extends StatelessWidget {
       padding: EdgeInsets.all(3.w),
       margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.1),
+        color: AppColors.error.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: AppColors.error.withOpacity(0.3),
+          color: AppColors.error.withValues(alpha:0.3),
           width: 1,
         ),
       ),

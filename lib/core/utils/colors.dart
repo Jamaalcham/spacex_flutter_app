@@ -78,15 +78,15 @@ class AppColors {
   static const Color starWhite = textPrimary;
   
   // Glassmorphism Colors
-  static Color glassBackground = Colors.white.withOpacity(0.1);
-  static Color glassBackgroundLight = Colors.white.withOpacity(0.9);
-  static Color glassBorder = Colors.white.withOpacity(0.2);
-  static Color glassBorderLight = Colors.white.withOpacity(0.3);
+  static Color glassBackground = Colors.white.withValues(alpha:0.1);
+  static Color glassBackgroundLight = Colors.white.withValues(alpha:0.9);
+  static Color glassBorder = Colors.white.withValues(alpha:0.2);
+  static Color glassBorderLight = Colors.white.withValues(alpha:0.3);
   
   // Shimmer Colors
   static Color shimmerBase = cardSurface;
   static Color lightShimmerBase = Color(0xFFE1E5E9);
-  static Color shimmerHighlight = Colors.white.withOpacity(0.1);
+  static Color shimmerHighlight = Colors.white.withValues(alpha:0.1);
   static Color lightShimmerHighlight = Colors.white;
   
   // === PROFESSIONAL GRADIENT SYSTEM ===
@@ -167,8 +167,8 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Colors.white.withOpacity(0.1),
-      Colors.white.withOpacity(0.05),
+      Colors.white.withValues(alpha:0.1),
+      Colors.white.withValues(alpha:0.05),
     ],
   );
   
@@ -176,30 +176,30 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Colors.white.withOpacity(0.9),
-      Colors.white.withOpacity(0.7),
+      Colors.white.withValues(alpha:0.9),
+      Colors.white.withValues(alpha:0.7),
     ],
   );
   
   // === SEMANTIC COLOR SYSTEM ===
   
   // Status Colors with Opacity Variants
-  static Color successLight = missionGreen.withOpacity(0.1);
-  static Color errorLight = launchRed.withOpacity(0.1);
-  static Color warningLight = rocketOrange.withOpacity(0.1);
-  static Color infoLight = spaceBlue.withOpacity(0.1);
+  static Color successLight = missionGreen.withValues(alpha:0.1);
+  static Color errorLight = launchRed.withValues(alpha:0.1);
+  static Color warningLight = rocketOrange.withValues(alpha:0.1);
+  static Color infoLight = spaceBlue.withValues(alpha:0.1);
   
   // Interactive States
-  static Color hoverOverlay = Colors.white.withOpacity(0.08);
-  static Color pressedOverlay = Colors.white.withOpacity(0.12);
-  static Color focusOverlay = Colors.white.withOpacity(0.16);
+  static Color hoverOverlay = Colors.white.withValues(alpha:0.08);
+  static Color pressedOverlay = Colors.white.withValues(alpha:0.12);
+  static Color focusOverlay = Colors.white.withValues(alpha:0.16);
   
   // Shadow Colors
-  static Color shadowDark = Colors.black.withOpacity(0.3);
-  static Color shadowLight = Colors.grey.withOpacity(0.2);
-  static Color glowBlue = spaceBlue.withOpacity(0.4);
-  static Color glowOrange = rocketOrange.withOpacity(0.4);
-  static Color glowGreen = missionGreen.withOpacity(0.4);
+  static Color shadowDark = Colors.black.withValues(alpha:0.3);
+  static Color shadowLight = Colors.grey.withValues(alpha:0.2);
+  static Color glowBlue = spaceBlue.withValues(alpha:0.4);
+  static Color glowOrange = rocketOrange.withValues(alpha:0.4);
+  static Color glowGreen = missionGreen.withValues(alpha:0.4);
 
   // === SCREEN-SPECIFIC BACKGROUND SYSTEM ===
   
@@ -263,8 +263,8 @@ class AppColors {
           end: Alignment.bottomCenter,
           colors: [
             Colors.transparent,
-            accentColor!.withOpacity(isDark ? 0.03 : 0.02),
-            accentColor!.withOpacity(isDark ? 0.05 : 0.03),
+            accentColor!.withValues(alpha:isDark ? 0.03 : 0.02),
+            accentColor!.withValues(alpha:isDark ? 0.05 : 0.03),
           ],
           stops: const [0.0, 0.7, 1.0],
         ),

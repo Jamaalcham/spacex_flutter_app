@@ -2,17 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sizer/sizer.dart';
 
-import '../../core/utils/spacing.dart';
 import '../../core/utils/typography.dart';
-import '../../core/utils/localization/language_constants.dart';
+import '../../core/utils/colors.dart';
 import '../providers/theme_provider.dart';
-import '../providers/language_provider.dart';
-import '../widgets/common/modern_glass_card.dart';
+import '../widgets/common/glass_background.dart';
+import '../widgets/common/countdown_timer_widget.dart';
 
-/// Home Screen - Main navigation hub for the SpaceX Explorer app
-/// 
-/// Provides navigation to all major sections: Missions, Rockets, and Launches
-/// with quick stats and featured content previews.
+// Provides navigation to all major sections: Missions, Rockets, and Launches
+// with quick stats and featured content previews.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -21,10 +18,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  late AnimationController _animationController;
   late AnimationController _rocketAnimationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
   late Animation<double> _rocketScaleAnimation;
   late Animation<double> _rocketRotationAnimation;
 
@@ -32,31 +26,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-
     _rocketAnimationController = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
-
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
 
     // Rocket jumping/zooming animation
     _rocketScaleAnimation = Tween<double>(
@@ -76,366 +49,301 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       curve: Curves.easeInOut,
     ));
 
-    _animationController.forward();
-    
     // Start rocket animation with delay and repeat
     Future.delayed(const Duration(milliseconds: 800), () {
       _rocketAnimationController.repeat(reverse: true);
     });
+
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    // _countdownTimer.cancel(); // No timer to cancel since we're not counting down
     _rocketAnimationController.dispose();
     super.dispose();
   }
 
-  void _navigateToSection(int index) {
-    // Navigate to main navigation screen with specific tab
-    Navigator.of(context).pushReplacementNamed('/main', arguments: index);
-  }
 
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final languageProvider = Provider.of<LanguageProvider>(context);
     final isDark = themeProvider.isDarkMode;
 
     return Scaffold(
-      body: SafeArea(
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isDark
-                  ? [
-                      const Color(0xFF0F172A), // Deep space
-                      const Color(0xFF1E293B), // Nebula
-                      const Color(0xFF334155), // Cosmic dust
-                    ]
-                  : [
-                      const Color(0xFFF8FAFC),
-                      const Color(0xFFE2E8F0),
-                    const Color(0xFFCBD5E1),
-                  ],
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: SlideTransition(
-                position: _slideAnimation,
-                child: Padding(
-                  padding: AppSpacing.paddingHorizontalM,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppSpacing.gapVerticalL,
-                      
-                      // Enhanced Header Section
-                      _buildModernHeader(context, isDark, themeProvider, languageProvider),
-                  
-                      AppSpacing.gapVerticalXL,
-                  
-                      // Enhanced Stats Section
-                      _buildModernSectionHeader(
-                        context,
-                        getTranslated(context, 'missions') ?? 'Mission Stats',
-                        getTranslated(context, 'app_subtitle') ?? 'Explore SpaceX Data',
-                        Icons.analytics_outlined,
-                        isDark,
-                      ),
-                      
-                      AppSpacing.gapVerticalL,
-                  
-                      // Modern Stats Grid
-                      GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 2,
-                        childAspectRatio: 1.1,
-                        mainAxisSpacing: 3.w,
-                        crossAxisSpacing: 3.w,
-                        children: [
-                          ModernStatCard(
-                            title: 'Total Missions',
-                            value: '150+',
-                            icon: Icons.rocket_launch_rounded,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                          ),
-                          ModernStatCard(
-                            title: 'Active Rockets',
-                            value: '12',
-                            icon: Icons.rocket_rounded,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFF59E0B), Color(0xFFEF4444)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                          ),
-                          ModernStatCard(
-                            title: 'Success Rate',
-                            value: '94%',
-                            icon: Icons.verified_rounded,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF10B981), Color(0xFF059669)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                          ),
-                          ModernStatCard(
-                            title: 'Upcoming Launches',
-                            value: '8',
-                            icon: Icons.schedule_rounded,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF8B5CF6), Color(0xFF6366F1)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                          ),
-                        ],
-                      ),
-                      
-                      AppSpacing.gapVerticalXL,
-                      
-                      // Featured Content Section
-                      _buildModernSectionHeader(
-                        context,
-                        getTranslated(context, 'gallery') ?? 'Featured Content',
-                        getTranslated(context, 'details') ?? 'Latest SpaceX Highlights',
-                        Icons.star_rounded,
-                        isDark,
-                      ),
-                      
-                      AppSpacing.gapVerticalL,
-                      
-                      // Featured Cards
-                      Column(
-                        children: [
-                          ModernNavigationCard(
-                            title: 'Latest Launch',
-                            subtitle: 'Starship IFT-6 Mission Success',
-                            icon: Icons.rocket_launch_rounded,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            onTap: () => _navigateToSection(2),
-                          ),
-                          AppSpacing.gapVerticalM,
-                          ModernNavigationCard(
-                            title: 'Rocket Spotlight',
-                            subtitle: 'Falcon Heavy - Triple Core Power',
-                            icon: Icons.rocket_rounded,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFF59E0B), Color(0xFFEF4444)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            onTap: () => _navigateToSection(1),
-                          ),
-                          AppSpacing.gapVerticalM,
-                          ModernNavigationCard(
-                            title: 'Mission Update',
-                            subtitle: 'Crew Dragon ISS Operations',
-                            icon: Icons.flight_takeoff_rounded,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF8B5CF6), Color(0xFF10B981)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            onTap: () => _navigateToSection(0),
-                          ),
-                        ],
-                      ),
-                    ],
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedBuilder(
+              animation: _rocketAnimationController,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: _rocketScaleAnimation.value,
+                  child: Transform.rotate(
+                    angle: _rocketRotationAnimation.value,
+                    child: Icon(
+                      Icons.rocket_launch_rounded,
+                      color: isDark ? AppColors.rocketOrange : AppColors.spaceBlue,
+                      size: 6.w,
+                    ),
                   ),
-                ),
+                );
+              },
+            ),
+            SizedBox(width: 2.w),
+            Text(
+              'SpaceX Explorer',
+              style: AppTypography.getHeadline(isDark).copyWith(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : Colors.black87,
               ),
             ),
-          ),
+          ],
         ),
       ),
-    ));
-  }
-
-  /// Modern header with enhanced design
-  Widget _buildModernHeader(BuildContext context, bool isDark, ThemeProvider themeProvider, LanguageProvider languageProvider) {
-    return ModernGlassCard(
-      padding: AppSpacing.paddingL,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Stack(
         children: [
-          Row(
-            children: [
-              AnimatedBuilder(
-                animation: _rocketAnimationController,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _rocketScaleAnimation.value,
-                    child: Transform.rotate(
-                      angle: _rocketRotationAnimation.value,
-                      child: Container(
-                        padding: AppSpacing.paddingM,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF1E3A8A).withOpacity(0.4),
-                              blurRadius: 20 * _rocketScaleAnimation.value,
-                              spreadRadius: 2 * _rocketScaleAnimation.value,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.rocket_launch_rounded,
-                          color: Colors.white,
-                          size: 8.w,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              AppSpacing.gapHorizontalL,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      getTranslated(context, 'app_title') ?? 'SpaceX Explorer',
-                      style: AppTypography.getHeadline(isDark).copyWith(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 22.sp,
-                      ),
-                    ),
-                    Text(
-                      getTranslated(context, 'app_subtitle') ?? 'Discover the future of space exploration',
-                      style: AppTypography.getBody(isDark).copyWith(
-                        fontSize: 14.sp,
-                        color: isDark 
-                          ? Colors.white70 
-                          : Colors.black54,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Theme and language controls
-              Row(
+          // Glass background
+          const GlassBackground(
+            secondaryColor: AppColors.rocketOrange,
+            child: SizedBox.expand(),
+          ),
+          
+          // Main content with rocket background
+          SafeArea(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
                 children: [
-                  Container(
-                    padding: AppSpacing.paddingS,
-                    decoration: BoxDecoration(
-                      color: isDark 
-                        ? Colors.white.withOpacity(0.1)
-                        : Colors.black.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(12),
+                // Top section with rocket background and content
+                Container(
+                  width: 90.w,
+                  height: 30.h,
+                  margin: EdgeInsets.symmetric(horizontal: 5.w),
+                  decoration: BoxDecoration(
+                    image: isDark ? const DecorationImage(
+                      image: AssetImage('assets/images/rocket.png'),
+                      fit: BoxFit.cover,
+                    ) : null,
+                    color: isDark ? null : Colors.white.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(20),
+                    border: isDark ? null : Border.all(
+                      color: Colors.black.withOpacity(0.1),
+                      width: 0.5,
                     ),
-                    child: GestureDetector(
-                      onTap: () => themeProvider.toggleTheme(),
-                      child: Icon(
-                        isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                        color: isDark ? Colors.white : Colors.black87,
-                        size: 20.sp,
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.black.withOpacity(0.7) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Main title
+                          Text(
+                            'Live Mission Countdown',
+                            style: AppTypography.getHeadline(isDark).copyWith(
+                              fontSize: 20.sp,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? Colors.white : Colors.black87,
+                              letterSpacing: 0.5,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          
+                          SizedBox(height: 1.h),
+                          
+                          // Subtitle
+                          Text(
+                            'Next Launch: Falcon 9 - Starlink Mission',
+                            style: AppTypography.getBody(isDark).copyWith(
+                              fontSize: 12.sp,
+                              color: isDark ? Colors.white.withOpacity(0.9) : Colors.black54,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          
+                          SizedBox(height: 2.h),
+                          
+                          // Countdown timer
+                          CountdownTimerWidget(
+                            initialDuration: const Duration(
+                              days: 4,
+                              hours: 14,
+                              minutes: 34,
+                              seconds: 49,
+                            ),
+                            isDark: isDark,
+                            onTimerComplete: () {
+                              // Handle timer completion if needed
+                            },
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  AppSpacing.gapHorizontalS,
-                  Container(
-                    padding: AppSpacing.paddingS,
-                    decoration: BoxDecoration(
-                      color: isDark 
-                        ? Colors.white.withOpacity(0.1)
-                        : Colors.black.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: GestureDetector(
-                      onTap: () async => await languageProvider.toggleLanguage(),
-                      child: Text(
-                        languageProvider.currentLanguage.languageCode == 'en' ? 'FR' : 'EN',
-                        style: AppTypography.getCaption(isDark).copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
-                      ),
-                    ),
-                  ),
+                ),
+                
+                // Mission Overview Section
+                SizedBox(height: 4.h),
+                _buildMissionOverviewSection(isDark),
+                
+                // Launch Success Rate Section
+                SizedBox(height: 4.h),
+                _buildLaunchSuccessRateSection(isDark),
+                
+                // Bottom padding
+                SizedBox(height: 4.h),
                 ],
               ),
-            ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  /// Modern section header with enhanced design
-  Widget _buildModernSectionHeader(
-    BuildContext context,
-    String title,
-    String subtitle,
-    IconData icon,
-    bool isDark,
-  ) {
+  /// Build Mission Overview section with stats cards
+  Widget _buildMissionOverviewSection(bool isDark) {
     return Padding(
-      padding: AppSpacing.paddingHorizontalS,
-      child: Row(
+      padding: EdgeInsets.symmetric(horizontal: 5.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: AppSpacing.paddingS,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF8B5CF6).withOpacity(0.2),
-                  const Color(0xFF6366F1).withOpacity(0.1),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFF8B5CF6).withOpacity(0.3),
-                width: 1,
-              ),
-            ),
-            child: Icon(
-              icon,
-              color: const Color(0xFF8B5CF6),
-              size: 20.sp,
+          // Section title
+          Text(
+            'MISSION OVERVIEW',
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white60 : Colors.black54,
+              letterSpacing: 0.5,
             ),
           ),
-          AppSpacing.gapHorizontalM,
-          Expanded(
+          
+          SizedBox(height: 3.h),
+          
+          // Top row: Total Launches and Successful
+          Row(
+            children: [
+              SizedBox(
+                width: (90.w - 3.w) / 2, // Exact half width minus spacing
+                child: _buildStatCard(
+                  title: 'Total Launches',
+                  value: '185',
+                  isDark: isDark,
+                ),
+              ),
+              SizedBox(width: 3.w),
+              SizedBox(
+                width: (90.w - 3.w) / 2, // Exact half width minus spacing
+                child: _buildStatCard(
+                  title: 'Successful',
+                  value: '170',
+                  isDark: isDark,
+                ),
+              ),
+            ],
+          ),
+          
+          SizedBox(height: 3.h),
+          
+          // Bottom row: Capsules Recovered (full width)
+          _buildStatCard(
+            title: 'Capsules Recovered',
+            value: '150',
+            isDark: isDark,
+            isFullWidth: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build Launch Success Rate section with progress bar
+  Widget _buildLaunchSuccessRateSection(bool isDark) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 5.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section title
+          Text(
+            'LAUNCH SUCCESS RATE',
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white60 : Colors.black54,
+              letterSpacing: 0.5,
+            ),
+          ),
+          
+          SizedBox(height: 3.h),
+          
+          // Success rate card with progress bar
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(6.w),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.8),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
+                width: 0.5,
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: AppTypography.getTitle(isDark).copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Overall Success Rate',
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.white70 : Colors.black54,
+                      ),
+                    ),
+                    Text(
+                      '92%',
+                      style: TextStyle(
+                        fontSize: 24.sp,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  subtitle,
-                  style: AppTypography.getCaption(isDark).copyWith(
-                    color: isDark 
-                      ? Colors.white.withOpacity(0.6)
-                      : Colors.black.withOpacity(0.5),
+                
+                SizedBox(height: 2.h),
+                
+                // Progress bar
+                Container(
+                  height: 1.h,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(0.5.h),
+                  ),
+                  child: FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: 0.92, // 92%
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.spaceBlue,
+                        borderRadius: BorderRadius.circular(0.5.h),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -444,7 +352,54 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ],
       ),
     );
+  }
 
+  /// Build individual stat card
+  Widget _buildStatCard({
+    required String title,
+    required String value,
+    required bool isDark,
+    bool isFullWidth = false,
+  }) {
+    return Container(
+      width: isFullWidth ? double.infinity : null,
+      height: 20.h, // Fixed height for consistent card sizes
+      padding: EdgeInsets.all(6.w),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
+          width: 0.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w500,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 36.sp,
+                fontWeight: FontWeight.w900,
+                color: isDark ? Colors.white : Colors.black87,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
 }

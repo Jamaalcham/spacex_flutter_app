@@ -5,22 +5,24 @@ import 'package:provider/provider.dart';
 import '../../core/utils/colors.dart';
 import '../../core/utils/app_theme.dart';
 import '../../core/utils/localization/language_constants.dart';
-import '../providers/mission_provider.dart';
+import '../providers/capsule_provider.dart';
 import '../providers/rocket_provider.dart';
 import '../providers/launch_provider.dart';
 import '../providers/theme_provider.dart';
 import 'home_screen.dart';
-import 'missions_screen.dart';
+import 'capsules_screen.dart';
 import 'rockets_screen.dart';
 import 'launches_screen.dart';
+import 'settings_screen.dart';
 
 /// Main Navigation Screen with Bottom Navigation Bar
 /// 
-/// Provides navigation between 4 main sections:
+/// Provides navigation between 5 main sections:
 /// - Home
-/// - Missions
+/// - Capsules
 /// - Rockets  
 /// - Launches (includes Launchpads and Landpads)
+/// - Settings
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
 
@@ -34,7 +36,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const MissionsScreen(),
+    const CapsulesScreen(),
     const RocketsScreen(),
     const LaunchesScreen(),
   ];
@@ -48,7 +50,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const BottomNavigationBarItem(
       icon: Icon(Icons.explore),
       activeIcon: Icon(Icons.explore),
-      label: 'Missions',
+      label: 'Capsules',
     ),
     const BottomNavigationBarItem(
       icon: Icon(Icons.rocket),
@@ -69,7 +71,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     
     // Initialize providers
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<MissionProvider>().fetchMissions();
+      context.read<CapsuleProvider>().fetchCapsules();
       context.read<RocketProvider>().fetchRockets();
       context.read<LaunchProvider>().fetchLaunches();
     });
@@ -114,9 +116,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             },
             children: const [
               HomeScreen(),
-              MissionsScreen(),
+              CapsulesScreen(),
               RocketsScreen(),
               LaunchesScreen(),
+              SettingsScreen(),
             ],
           ),
           bottomNavigationBar: Container(
@@ -140,7 +143,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     ),
               boxShadow: [
                 BoxShadow(
-                  color: (isDark ? Colors.black : Colors.grey).withOpacity(0.3),
+                  color: (isDark ? Colors.black : Colors.grey).withValues(alpha:0.3),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),
@@ -229,7 +232,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       color: Colors.white,
                     ),
                   ),
-                  label: getTranslated(context, 'missions') ?? 'Missions',
+                  label: getTranslated(context, 'capsules') ?? 'Capsules',
                 ),
                 BottomNavigationBarItem(
                   icon: AnimatedContainer(
@@ -290,6 +293,36 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     ),
                   ),
                   label: getTranslated(context, 'launches') ?? 'Launches',
+                ),
+                BottomNavigationBarItem(
+                  icon: AnimatedContainer(
+                    duration: AppTheme.fastAnimation,
+                    padding: EdgeInsets.all(_currentIndex == 4 ? 1.w : 0),
+                    decoration: _currentIndex == 4
+                        ? BoxDecoration(
+                            gradient: AppColors.spaceGradient,
+                            borderRadius: BorderRadius.circular(8),
+                          )
+                        : null,
+                    child: Icon(
+                      Icons.settings_outlined,
+                      size: _currentIndex == 4 ? 6.w : 5.5.w,
+                      color: _currentIndex == 4 ? Colors.white : null,
+                    ),
+                  ),
+                  activeIcon: Container(
+                    padding: EdgeInsets.all(1.w),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.spaceGradient,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.settings,
+                      size: 6.w,
+                      color: Colors.white,
+                    ),
+                  ),
+                  label: getTranslated(context, 'settings') ?? 'Settings',
                 ),
               ],
               ),

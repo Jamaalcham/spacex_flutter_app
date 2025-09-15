@@ -80,7 +80,7 @@ class _SpaceErrorWidgetState extends State<SpaceErrorWidget>
                       Container(
                         padding: EdgeInsets.all(4.w),
                         decoration: BoxDecoration(
-                          color: AppColors.errorRed.withOpacity(0.1),
+                          color: AppColors.errorRed.withValues(alpha:0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -223,7 +223,7 @@ class _EmptyStateWidgetState extends State<EmptyStateWidget>
                   child: widget.illustration ?? Container(
                     padding: EdgeInsets.all(6.w),
                     decoration: BoxDecoration(
-                      color: (isDark ? AppColors.cosmicBlue : AppColors.nebulaBlue).withOpacity(0.1),
+                      color: (isDark ? AppColors.cosmicBlue : AppColors.nebulaBlue).withValues(alpha:0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(

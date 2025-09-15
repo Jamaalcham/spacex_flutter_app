@@ -40,12 +40,12 @@ class ModernCard extends StatelessWidget {
               gradient: LinearGradient(
                 colors: gradientColors ?? (isDark
                     ? [
-                        Colors.white.withOpacity(0.1),
-                        Colors.white.withOpacity(0.05),
+                        Colors.white.withValues(alpha:0.1),
+                        Colors.white.withValues(alpha:0.05),
                       ]
                     : [
-                        Colors.white.withOpacity(0.9),
-                        Colors.white.withOpacity(0.7),
+                        Colors.white.withValues(alpha:0.9),
+                        Colors.white.withValues(alpha:0.7),
                       ]),
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -53,15 +53,15 @@ class ModernCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(borderRadius ?? 16),
               border: Border.all(
                 color: isDark
-                    ? Colors.white.withOpacity(0.2)
-                    : Colors.white.withOpacity(0.8),
+                    ? Colors.white.withValues(alpha:0.2)
+                    : Colors.white.withValues(alpha:0.8),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
                   color: isDark
-                      ? Colors.black.withOpacity(0.3)
-                      : Colors.grey.withOpacity(0.2),
+                      ? Colors.black.withValues(alpha:0.3)
+                      : Colors.grey.withValues(alpha:0.2),
                   blurRadius: elevation ?? 15,
                   spreadRadius: 0,
                   offset: Offset(0, elevation != null ? elevation! / 2 : 8),
@@ -104,7 +104,7 @@ class ModernIconContainer extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: gradientColors.first.withOpacity(0.4),
+            color: gradientColors.first.withValues(alpha:0.4),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -157,7 +157,7 @@ class ModernButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: (gradientColors?.first ?? const Color(0xFF3B82F6)).withOpacity(0.4),
+            color: (gradientColors?.first ?? const Color(0xFF3B82F6)).withValues(alpha:0.4),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -221,12 +221,12 @@ class ModernSearchBar extends StatelessWidget {
         gradient: LinearGradient(
           colors: isDark
               ? [
-                  Colors.white.withOpacity(0.1),
-                  Colors.white.withOpacity(0.05),
+                  Colors.white.withValues(alpha:0.1),
+                  Colors.white.withValues(alpha:0.05),
                 ]
               : [
-                  Colors.white.withOpacity(0.9),
-                  Colors.white.withOpacity(0.7),
+                  Colors.white.withValues(alpha:0.9),
+                  Colors.white.withValues(alpha:0.7),
                 ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -234,8 +234,8 @@ class ModernSearchBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.2)
-              : Colors.white.withOpacity(0.8),
+              ? Colors.white.withValues(alpha:0.2)
+              : Colors.white.withValues(alpha:0.8),
           width: 1,
         ),
       ),
@@ -321,7 +321,7 @@ class NeumorphicCard extends StatelessWidget {
             boxShadow: isPressed
                 ? [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.4),
+                      color: Colors.black.withValues(alpha:0.4),
                       offset: const Offset(2, 2),
                       blurRadius: 8,
                       spreadRadius: -2,
@@ -329,12 +329,12 @@ class NeumorphicCard extends StatelessWidget {
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withValues(alpha:0.3),
                       offset: const Offset(8, 8),
                       blurRadius: 16,
                     ),
                     BoxShadow(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha:0.1),
                       offset: const Offset(-8, -8),
                       blurRadius: 16,
                     ),
@@ -379,7 +379,7 @@ class SpaceFloatingButton extends StatelessWidget {
         borderRadius: BorderRadius.circular((size ?? 14.w) / 2),
         boxShadow: [
           BoxShadow(
-            color: AppColors.spaceBlue.withOpacity(0.4),
+            color: AppColors.spaceBlue.withValues(alpha:0.4),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -425,12 +425,12 @@ class ModernTabBar extends StatelessWidget {
         gradient: LinearGradient(
           colors: isDark
               ? [
-                  Colors.white.withOpacity(0.1),
-                  Colors.white.withOpacity(0.05),
+                  Colors.white.withValues(alpha:0.1),
+                  Colors.white.withValues(alpha:0.05),
                 ]
               : [
-                  Colors.white.withOpacity(0.9),
-                  Colors.white.withOpacity(0.7),
+                  Colors.white.withValues(alpha:0.9),
+                  Colors.white.withValues(alpha:0.7),
                 ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -438,8 +438,8 @@ class ModernTabBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.2)
-              : Colors.white.withOpacity(0.8),
+              ? Colors.white.withValues(alpha:0.2)
+              : Colors.white.withValues(alpha:0.8),
           width: 1,
         ),
       ),
@@ -470,7 +470,7 @@ class ModernTabBar extends StatelessWidget {
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: AppColors.spaceBlue.withOpacity(0.3),
+                            color: AppColors.spaceBlue.withValues(alpha:0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -539,7 +539,7 @@ class SpaceProgressIndicator extends StatelessWidget {
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular((height ?? 1.w) / 2),
                 ),
               ),
@@ -557,7 +557,7 @@ class SpaceProgressIndicator extends StatelessWidget {
                     boxShadow: [
                       BoxShadow(
                         color: (gradientColors?.first ?? AppColors.missionGreen)
-                            .withOpacity(0.4),
+                            .withValues(alpha:0.4),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),

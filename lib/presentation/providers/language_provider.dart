@@ -13,6 +13,8 @@ class LanguageProvider extends ChangeNotifier {
   LanguageModel get currentLanguage => _selectedLanguage;
   List<LanguageModel> get languages => _languages;
   bool get isInitialized => _isInitialized;
+  
+  String get currentLanguageName => _selectedLanguage.name;
 
   LanguageProvider() {
     _selectedLanguage = _languages.first;
@@ -78,16 +80,23 @@ class LanguageProvider extends ChangeNotifier {
     );
   }
 
-  Future<void> setLanguage(String languageCode) async {
+  Future<void> setLanguage(dynamic language) async {
     try {
-      languageCode = languageCode.toLowerCase();
+      String languageCode;
+      if (language is Locale) {
+        languageCode = language.languageCode.toLowerCase();
+      } else if (language is String) {
+        languageCode = language.toLowerCase();
+      } else {
+        return;
+      }
 
-      final language = _languages.firstWhere(
+      final selectedLanguage = _languages.firstWhere(
         (element) => element.languageCode.toLowerCase() == languageCode,
         orElse: () => _languages.first,
       );
 
-      _selectedLanguage = language;
+      _selectedLanguage = selectedLanguage;
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(key, languageCode);
