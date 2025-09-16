@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_i18n/flutter_i18n.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:ui' as ui;
 
@@ -104,6 +105,31 @@ class LanguageProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Error setting language: $e');
+    }
+  }
+
+  // New method for real-time language switching with flutter_i18n
+  Future<void> changeLanguage(String languageCode, [BuildContext? context]) async {
+    try {
+      final selectedLanguage = _languages.firstWhere(
+        (element) => element.languageCode.toLowerCase() == languageCode.toLowerCase(),
+        orElse: () => _languages.first,
+      );
+
+      _selectedLanguage = selectedLanguage;
+      
+      // Save to preferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(key, languageCode);
+      
+      // Update flutter_i18n if context is available
+      if (context != null) {
+        await FlutterI18n.refresh(context, Locale(languageCode));
+      }
+      
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error changing language: $e');
     }
   }
 

@@ -77,6 +77,22 @@ class CapsuleEntity {
   @override
   int get hashCode => id.hashCode;
 
+  /// Creates a CapsuleEntity from JSON data
+  factory CapsuleEntity.fromJson(Map<String, dynamic> json) {
+    return CapsuleEntity(
+      id: json['id'] ?? '',
+      serial: json['serial'],
+      type: json['type'],
+      status: json['status'],
+      reuseCount: json['reuse_count'],
+      waterLandings: json['water_landings'],
+      landLandings: json['land_landings'],
+      lastUpdate: json['last_update'],
+      launches: List<String>.from(json['launches'] ?? []),
+      details: json['details'],
+    );
+  }
+
   @override
   String toString() {
     return 'CapsuleEntity(id: $id, serial: $serial, status: $status, flights: ${launches.length})';

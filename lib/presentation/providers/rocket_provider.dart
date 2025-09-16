@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../domain/entities/rocket_entity.dart';
 import '../../domain/repositories/rocket_repository.dart';
 import '../../data/repositories/rocket_repository_impl.dart';
-import '../../core/utils/exceptions.dart';
+import '../../core/network/network_exceptions.dart';
 
 /// Provider for managing rocket-related state and operations
 /// 
@@ -202,11 +202,7 @@ class RocketProvider extends ChangeNotifier {
   /// Converts exception to user-friendly error message
   String _getErrorMessage(dynamic error) {
     if (error is NetworkException) {
-      return 'No internet connection. Please check your network and try again.';
-    } else if (error is ServerException) {
-      return 'Server error. Please try again later.';
-    } else if (error is NotFoundException) {
-      return 'No rockets found.';
+      return error.message;
     } else {
       return 'An unexpected error occurred. Please try again.';
     }

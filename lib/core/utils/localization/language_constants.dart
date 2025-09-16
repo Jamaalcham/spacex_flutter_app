@@ -1,67 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-import 'spacex_localization.dart';
+import 'package:flutter_i18n/flutter_i18n.dart';
+import 'i18n_helper.dart';
 
 // Language codes
-const String LANGUAGE_CODE = 'languageCode';
 const String ENGLISH = 'en';
 const String FRANCAIS = 'fr';
 
-// Country codes
-const String US = 'US';
-const String FR = 'FR';
-
-// This method will be called when user manually selects a language
-Future<Locale> setLocale(BuildContext context, String languageCode) async {
-  try {
-    // Update the app locale
-    Locale locale = _locale(languageCode);
-
-    // Save to preferences
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString(LANGUAGE_CODE, languageCode);
-
-    return locale;
-  } catch (e) {
-    debugPrint('Error setting locale: $e');
-    return const Locale(ENGLISH, US);
-  }
+// Get translated text using flutter_i18n
+String getTranslated(BuildContext context, String key, {Map<String, String>? params}) {
+  return I18nHelper.translate(context, key, placeholders: params);
 }
 
+// Set locale and notify listeners
+Future<void> setLocale(BuildContext context, String languageCode) async {
+  await I18nHelper.setLocale(languageCode);
+  await FlutterI18n.refresh(context, Locale(languageCode));
+}
+
+// Get current locale
 Future<Locale> getLocale() async {
-  try {
-    // Get system locale first
-    final deviceLocale =
-        WidgetsBinding.instance.platformDispatcher.locale.languageCode
-            .toLowerCase();
-
-    // Check if device locale is supported
-    if (deviceLocale == ENGLISH.toLowerCase() ||
-        deviceLocale == FRANCAIS.toLowerCase()) {
-      return _locale(deviceLocale);
-    }
-
-    // Fallback to saved preference only if device locale is not supported
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String languageCode = prefs.getString(LANGUAGE_CODE) ?? ENGLISH;
-    return _locale(languageCode);
-  } catch (e) {
-    debugPrint('Error getting locale: $e');
-    return const Locale(ENGLISH, US);
-  }
+  return await I18nHelper.getCurrentLocale();
 }
 
-Locale _locale(String languageCode) {
-  switch (languageCode.toLowerCase()) {
-    case FRANCAIS:
-      return const Locale(FRANCAIS, FR);
-    case ENGLISH:
-    default:
-      return const Locale(ENGLISH, US);
-  }
+// Get supported locales
+List<Locale> getSupportedLocales() {
+  return I18nHelper.getSupportedLocales();
 }
 
-String? getTranslated(BuildContext context, String key) {
-  return SpaceXLocalization.of(context)?.translate(key);
+// Get language display name
+String getLanguageName(String languageCode) {
+  return I18nHelper.getLanguageName(languageCode);
 }

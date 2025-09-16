@@ -65,15 +65,11 @@ class CustomAppBar extends StatelessWidget {
   factory CustomAppBar.rockets({
     required VoidCallback onSearch,
     required VoidCallback onFilter,
-    required VoidCallback onViewToggle,
-    required bool isGridView,
   }) {
     return CustomAppBar(
       title: 'Rockets',
       onSearch: onSearch,
       onFilter: onFilter,
-      onViewToggle: onViewToggle,
-      isGridView: isGridView,
     );
   }
 

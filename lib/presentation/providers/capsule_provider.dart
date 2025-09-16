@@ -4,6 +4,8 @@ import '../../domain/entities/capsule_entity.dart';
 import '../../domain/repositories/capsule_repository.dart';
 import '../../data/repositories/capsule_repository_impl.dart';
 import '../../core/utils/exceptions.dart';
+import '../../core/network/api_service.dart';
+import '../../core/network/network_exceptions.dart' as network;
 
 /// Provider for managing capsule-related state and operations
 /// 
@@ -23,9 +25,11 @@ class CapsuleProvider extends ChangeNotifier {
   List<String> _selectedStatuses = [];
   
   // Pagination
-  int _currentPage = 0;
-  final int _pageSize = 20;
+  int _currentPage = 1;
+  final int _pageSize = 10;
   bool _hasMoreData = true;
+  int _totalDocs = 0;
+  int _totalPages = 0;
   
   // View mode
   bool _isGridView = false;
@@ -54,18 +58,30 @@ class CapsuleProvider extends ChangeNotifier {
 
     _isLoading = true;
     _error = null;
-    _currentPage = 0;
+    _currentPage = 1;
     _hasMoreData = true;
     notifyListeners();
 
     try {
-      final fetchedCapsules = await _repository.getCapsulesWithPagination(
-        limit: _pageSize,
-        offset: 0,
-      );
+      final queryData = {
+        "query": {},
+        "options": {
+          "limit": _pageSize,
+          "page": _currentPage,
+          "sort": {"serial": "asc"}
+        }
+      };
       
-      _capsules = fetchedCapsules;
-      _hasMoreData = fetchedCapsules.length == _pageSize;
+      final response = await ApiService.instance.queryCapsules(query: queryData);
+      
+      _capsules = (response['docs'] as List)
+          .map((json) => CapsuleEntity.fromJson(json))
+          .toList();
+      
+      _totalDocs = response['totalDocs'] ?? 0;
+      _totalPages = response['totalPages'] ?? 0;
+      _hasMoreData = response['hasNextPage'] ?? false;
+      
       _applyFilters();
     } catch (e) {
       _error = _getErrorMessage(e);
@@ -85,15 +101,24 @@ class CapsuleProvider extends ChangeNotifier {
 
     try {
       final nextPage = _currentPage + 1;
-      final moreCapsules = await _repository.getCapsulesWithPagination(
-        limit: _pageSize,
-        offset: nextPage * _pageSize,
-      );
+      final queryData = {
+        "query": {},
+        "options": {
+          "limit": _pageSize,
+          "page": nextPage,
+          "sort": {"serial": "asc"}
+        }
+      };
+      
+      final response = await ApiService.instance.queryCapsules(query: queryData);
+      final moreCapsules = (response['docs'] as List)
+          .map((json) => CapsuleEntity.fromJson(json))
+          .toList();
 
       if (moreCapsules.isNotEmpty) {
         _capsules.addAll(moreCapsules);
         _currentPage = nextPage;
-        _hasMoreData = moreCapsules.length == _pageSize;
+        _hasMoreData = response['hasNextPage'] ?? false;
         _applyFilters();
       } else {
         _hasMoreData = false;
@@ -121,8 +146,22 @@ class CapsuleProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final searchResults = await _repository.searchCapsules(_searchQuery);
-      _filteredCapsules = searchResults;
+      final queryData = {
+        "query": {
+          "\$text": {
+            "\$search": _searchQuery
+          }
+        },
+        "options": {
+          "limit": 50,
+          "sort": {"serial": "asc"}
+        }
+      };
+      
+      final response = await ApiService.instance.queryCapsules(query: queryData);
+      _filteredCapsules = (response['docs'] as List)
+          .map((json) => CapsuleEntity.fromJson(json))
+          .toList();
     } catch (e) {
       _error = _getErrorMessage(e);
       _filteredCapsules = [];
@@ -166,8 +205,11 @@ class CapsuleProvider extends ChangeNotifier {
 
   /// Refreshes capsules data
   Future<void> refreshCapsules() async {
-    _currentPage = 0;
+    _currentPage = 1;
     _hasMoreData = true;
+    _capsules.clear();
+    _filteredCapsules.clear();
+    _searchQuery = '';
     await fetchCapsules();
   }
 
@@ -215,8 +257,8 @@ class CapsuleProvider extends ChangeNotifier {
 
   /// Converts exception to user-friendly error message
   String _getErrorMessage(dynamic error) {
-    if (error is NetworkException) {
-      return 'No internet connection. Please check your network and try again.';
+    if (error is network.NetworkException) {
+      return error.message;
     } else if (error is ServerException) {
       return 'Server error. Please try again later.';
     } else if (error is NotFoundException) {

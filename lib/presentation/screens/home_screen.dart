@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sizer/sizer.dart';
 
-import '../../core/utils/typography.dart';
 import '../../core/utils/colors.dart';
+import '../../core/utils/spacing.dart';
+import '../../core/utils/typography.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/common/glass_background.dart';
 import '../widgets/common/countdown_timer_widget.dart';
@@ -96,10 +97,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             SizedBox(width: 2.w),
             Text(
               'SpaceX Explorer',
-              style: AppTypography.getHeadline(isDark).copyWith(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : Colors.black87,
+              style: AppTypography.getTitle(isDark).copyWith(
+                fontWeight: AppTypography.bold,
               ),
             ),
           ],
@@ -123,13 +122,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Container(
                   width: 90.w,
                   height: 30.h,
-                  margin: EdgeInsets.symmetric(horizontal: 5.w),
+                  margin: AppSpacing.paddingHorizontalM,
                   decoration: BoxDecoration(
-                    image: isDark ? const DecorationImage(
+                    image: const DecorationImage(
                       image: AssetImage('assets/images/rocket.png'),
                       fit: BoxFit.cover,
-                    ) : null,
-                    color: isDark ? null : Colors.white.withOpacity(0.8),
+                    ),
                     borderRadius: BorderRadius.circular(20),
                     border: isDark ? null : Border.all(
                       color: Colors.black.withOpacity(0.1),
@@ -142,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                      padding: EdgeInsets.symmetric(horizontal: AppSpacing.m, vertical: 2.h),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         mainAxisSize: MainAxisSize.min,
@@ -151,9 +149,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           Text(
                             'Live Mission Countdown',
                             style: AppTypography.getHeadline(isDark).copyWith(
-                              fontSize: 20.sp,
-                              fontWeight: FontWeight.w800,
-                              color: isDark ? Colors.white : Colors.black87,
+                              fontWeight: AppTypography.bold,
                               letterSpacing: 0.5,
                             ),
                             textAlign: TextAlign.center,
@@ -165,9 +161,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           Text(
                             'Next Launch: Falcon 9 - Starlink Mission',
                             style: AppTypography.getBody(isDark).copyWith(
-                              fontSize: 12.sp,
-                              color: isDark ? Colors.white.withOpacity(0.9) : Colors.black54,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: AppTypography.medium,
+                              color: isDark ? Colors.white : Colors.black87,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -215,17 +210,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   /// Build Mission Overview section with stats cards
   Widget _buildMissionOverviewSection(bool isDark) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 5.w),
+      padding: AppSpacing.paddingHorizontalM,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Section title
           Text(
             'MISSION OVERVIEW',
-            style: TextStyle(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white60 : Colors.black54,
+            style: AppTypography.getCaption(isDark).copyWith(
+              fontWeight: AppTypography.medium,
               letterSpacing: 0.5,
             ),
           ),
@@ -234,9 +227,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           
           // Top row: Total Launches and Successful
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               SizedBox(
                 width: (90.w - 3.w) / 2, // Exact half width minus spacing
+                height: 15.h,
                 child: _buildStatCard(
                   title: 'Total Launches',
                   value: '185',
@@ -246,6 +241,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               SizedBox(width: 3.w),
               SizedBox(
                 width: (90.w - 3.w) / 2, // Exact half width minus spacing
+                height: 15.h,
                 child: _buildStatCard(
                   title: 'Successful',
                   value: '170',
@@ -272,17 +268,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   /// Build Launch Success Rate section with progress bar
   Widget _buildLaunchSuccessRateSection(bool isDark) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 5.w),
+      padding: AppSpacing.paddingHorizontalM,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Section title
           Text(
             'LAUNCH SUCCESS RATE',
-            style: TextStyle(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white60 : Colors.black54,
+            style: AppTypography.getCaption(isDark).copyWith(
+              fontWeight: AppTypography.medium,
               letterSpacing: 0.5,
             ),
           ),
@@ -309,18 +303,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   children: [
                     Text(
                       'Overall Success Rate',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.white70 : Colors.black54,
+                      style: AppTypography.getBody(isDark).copyWith(
+                        fontWeight: AppTypography.medium,
                       ),
                     ),
                     Text(
-                      '92%',
-                      style: TextStyle(
-                        fontSize: 24.sp,
-                        fontWeight: FontWeight.w800,
-                        color: isDark ? Colors.white : Colors.black87,
+                      '81%',
+                      style: AppTypography.getHeadline(isDark).copyWith(
+                        fontWeight: AppTypography.bold,
                       ),
                     ),
                   ],
@@ -337,10 +327,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   child: FractionallySizedBox(
                     alignment: Alignment.centerLeft,
-                    widthFactor: 0.92, // 92%
+                    widthFactor: 0.81, // 92%
                     child: Container(
                       decoration: BoxDecoration(
-                        color: AppColors.spaceBlue,
+                        color: AppColors.missionGreen,
                         borderRadius: BorderRadius.circular(0.5.h),
                       ),
                     ),
@@ -363,7 +353,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }) {
     return Container(
       width: isFullWidth ? double.infinity : null,
-      height: 20.h, // Fixed height for consistent card sizes
+      height: 15.h, // Fixed height for consistent card sizes
       padding: EdgeInsets.all(6.w),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.8),
@@ -380,19 +370,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         children: [
           Text(
             title,
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w500,
-              color: isDark ? Colors.white : Colors.black87,
+            style: AppTypography.getBody(isDark).copyWith(
+              fontWeight: AppTypography.medium,
             ),
           ),
           Flexible(
             child: Text(
               value,
-              style: TextStyle(
-                fontSize: 36.sp,
-                fontWeight: FontWeight.w900,
-                color: isDark ? Colors.white : Colors.black87,
+              style: AppTypography.getHeadline(isDark).copyWith(
+                fontWeight: AppTypography.bold,
                 fontFamily: 'monospace',
               ),
             ),

@@ -77,34 +77,28 @@ class _GlassBackgroundState extends State<GlassBackground>
   Widget _buildAnimatedBackground(bool isDark) {
     final baseColor = isDark 
         ? AppColors.darkSpace 
-        : Colors.white;
+        : Colors.grey.shade200;
     const primaryColor = AppColors.spaceBlue;
     
-    return Container(
-      width: 100.w,
-      height: 100.h,
-      decoration: BoxDecoration(
-        color: isDark 
-            ? baseColor.withOpacity(0.9)
-            : baseColor.withOpacity(0.2),
-        backgroundBlendMode: BlendMode.overlay,
-      ),
+    return Positioned.fill(
       child: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark ? [
-              primaryColor.withOpacity(0.1),
-              primaryColor.withOpacity(0.05),
-              AppColors.darkSpace.withOpacity(0.8),
-            ] : [
-              Colors.white.withOpacity(0.6),
-              Colors.white.withOpacity(0.3),
-            ],
-            stops: isDark ? [0.0, 0.5, 1.0] : [0.0, 1.0],
-          ),
+          color: baseColor,
         ),
+        child: isDark ? Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                primaryColor.withOpacity(0.1),
+                primaryColor.withOpacity(0.05),
+                AppColors.darkSpace.withOpacity(0.8),
+              ],
+              stops: [0.0, 0.5, 1.0],
+            ),
+          ),
+        ) : const SizedBox.shrink(),
       ),
     );
   }
@@ -155,18 +149,22 @@ class _GlassBackgroundState extends State<GlassBackground>
   }
 
   Widget _buildGlassmorphismOverlay(bool isDark) {
-    return Container(
-      width: 100.w,
-      height: 100.h,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.white.withOpacity(isDark ? 0.05 : 0.3),
-            Colors.transparent,
-            Colors.black.withOpacity(isDark ? 0.1 : 0.05),
-          ],
+    if (!isDark) {
+      return const SizedBox.shrink(); // No overlay in light mode
+    }
+    
+    return Positioned.fill(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.white.withOpacity(0.05),
+              Colors.transparent,
+              Colors.black.withOpacity(0.1),
+            ],
+          ),
         ),
       ),
     );

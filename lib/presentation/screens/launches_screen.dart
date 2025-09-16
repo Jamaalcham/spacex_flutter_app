@@ -5,6 +5,7 @@ import 'package:sizer/sizer.dart';
 import 'package:get/get.dart';
 
 import '../../core/utils/colors.dart';
+import '../../core/utils/spacing.dart';
 import '../../domain/entities/launch_entity.dart';
 import '../providers/launch_provider.dart';
 import '../widgets/common/modern_card.dart';
@@ -154,7 +155,7 @@ class _LaunchesScreenState extends State<LaunchesScreen> with TickerProviderStat
                     // Subtitle Section
                     SliverToBoxAdapter(
                       child: Container(
-                        margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                        margin: EdgeInsets.symmetric(horizontal: AppSpacing.m, vertical: 2.h),
                         child: Text(
                           'Real-time SpaceX Launch Monitoring',
                           textAlign: TextAlign.center,

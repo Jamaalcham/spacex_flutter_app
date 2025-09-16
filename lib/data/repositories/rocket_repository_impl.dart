@@ -1,291 +1,251 @@
-import 'package:graphql_flutter/graphql_flutter.dart';
-
-import '../../core/network/graphql_client.dart';
+import 'package:dio/dio.dart';
+import '../../core/network/rest_client.dart';
 import '../../domain/entities/rocket_entity.dart';
 import '../../domain/repositories/rocket_repository.dart';
-import '../models/rocket_model.dart';
-import '../queries/rocket_queries.dart';
-import '../../core/utils/exceptions.dart' as app_exceptions;
+import '../../core/network/network_exceptions.dart';
 
-/// Implementation of RocketRepository using GraphQL
+/// Implementation of RocketRepository using REST API
 ///
-/// This class handles all rocket-related data operations using the SpaceX GraphQL API.
-/// It includes comprehensive error handling and data transformation between
-/// data models and domain entities.
+/// This class handles all rocket-related data operations using the SpaceX REST API.
+/// It includes comprehensive error handling and data transformation.
 class RocketRepositoryImpl implements RocketRepository {
-  final GraphQLClient _client;
+  final RestClient _client;
 
-  RocketRepositoryImpl({GraphQLClient? client})
-      : _client = client ?? GraphQLService.client;
+  RocketRepositoryImpl({RestClient? client})
+      : _client = client ?? RestClient.instance;
 
   @override
   Future<List<RocketEntity>> getAllRockets() async {
     try {
-      final QueryOptions options = QueryOptions(
-        document: gql(RocketQueries.getAllRockets),
-        fetchPolicy: FetchPolicy.cacheAndNetwork,
-        errorPolicy: ErrorPolicy.all,
+      final response = await _client.post(
+        '/rockets/query',
+        data: {
+          'query': {},
+          'options': {
+            'limit': 100,
+            'page': 1,
+            'sort': {'name': 1}
+          }
+        },
       );
 
-      final QueryResult result = await _client.query(options);
-
-      if (result.hasException) {
-        throw _handleGraphQLException(result.exception!);
+      if (response.data == null || response.data['docs'] == null) {
+        throw const NetworkException(message: 'No rocket data received from server');
       }
 
-      if (result.data == null || result.data!['rockets'] == null) {
-        throw app_exceptions.ServerException('No rocket data received from server');
-      }
-
-      final List<dynamic> rocketsJson = result.data!['rockets'];
-      final List<Rocket> rockets = rocketsJson
-          .map((json) => Rocket.fromJson(json))
+      final List<dynamic> rocketsJson = response.data['docs'];
+      return rocketsJson
+          .map((json) => RocketEntity.fromJson(json))
           .toList();
-
-      return rockets.map(_mapToEntity).toList();
+    } on DioException catch (e) {
+      throw _handleDioException(e);
     } catch (e) {
-      if (e is app_exceptions.AppException) rethrow;
-      throw app_exceptions.ServerException('Failed to fetch rockets: ${e.toString()}');
+      throw NetworkException(message: 'Failed to fetch rockets: ${e.toString()}');
     }
   }
 
   @override
   Future<RocketEntity> getRocketById(String id) async {
     try {
-      final QueryOptions options = QueryOptions(
-        document: gql(RocketQueries.getRocketById),
-        variables: {'id': id},
-        fetchPolicy: FetchPolicy.cacheAndNetwork,
-        errorPolicy: ErrorPolicy.all,
-      );
+      final response = await _client.get('/rockets/$id');
 
-      final QueryResult result = await _client.query(options);
-
-      if (result.hasException) {
-        throw _handleGraphQLException(result.exception!);
+      if (response.data == null) {
+        throw const NetworkException(message: 'Rocket not found');
       }
 
-      if (result.data == null || result.data!['rocket'] == null) {
-        throw app_exceptions.ServerException('Rocket with ID $id not found');
-      }
-
-      final Rocket rocket = Rocket.fromJson(result.data!['rocket']);
-      return _mapToEntity(rocket);
+      return RocketEntity.fromJson(response.data);
+    } on DioException catch (e) {
+      throw _handleDioException(e);
     } catch (e) {
-      if (e is app_exceptions.AppException) rethrow;
-      throw app_exceptions.ServerException('Failed to fetch rocket by ID: ${e.toString()}');
+      throw NetworkException(message: 'Failed to fetch rocket: ${e.toString()}');
     }
   }
 
   @override
   Future<List<RocketEntity>> getActiveRockets() async {
     try {
-      final QueryOptions options = QueryOptions(
-        document: gql(RocketQueries.getActiveRockets),
-        fetchPolicy: FetchPolicy.cacheAndNetwork,
-        errorPolicy: ErrorPolicy.all,
+      final response = await _client.post(
+        '/rockets/query',
+        data: {
+          'query': {'active': true},
+          'options': {
+            'limit': 100,
+            'page': 1,
+            'sort': {'name': 1}
+          }
+        },
       );
 
-      final QueryResult result = await _client.query(options);
-
-      if (result.hasException) {
-        throw _handleGraphQLException(result.exception!);
-      }
-
-      if (result.data == null || result.data!['rockets'] == null) {
+      if (response.data == null || response.data['docs'] == null) {
         return [];
       }
 
-      final List<dynamic> rocketsJson = result.data!['rockets'];
-      final List<Rocket> rockets = rocketsJson
-          .map((json) => Rocket.fromJson(json))
+      final List<dynamic> rocketsJson = response.data['docs'];
+      return rocketsJson
+          .map((json) => RocketEntity.fromJson(json))
           .toList();
-
-      return rockets.map(_mapToEntity).toList();
+    } on DioException catch (e) {
+      throw _handleDioException(e);
     } catch (e) {
-      if (e is app_exceptions.AppException) rethrow;
-      throw app_exceptions.ServerException('Failed to fetch active rockets: ${e.toString()}');
+      throw NetworkException(message: 'Failed to fetch active rockets: ${e.toString()}');
     }
   }
 
   @override
   Future<List<RocketEntity>> searchRockets(String searchTerm) async {
     try {
-      final QueryOptions options = QueryOptions(
-        document: gql(RocketQueries.searchRockets),
-        variables: {'searchTerm': searchTerm},
-        fetchPolicy: FetchPolicy.networkOnly,
-        errorPolicy: ErrorPolicy.all,
+      final response = await _client.post(
+        '/rockets/query',
+        data: {
+          'query': {
+            '\$text': {'\$search': searchTerm}
+          },
+          'options': {
+            'limit': 100,
+            'page': 1,
+            'sort': {'name': 1}
+          }
+        },
       );
 
-      final QueryResult result = await _client.query(options);
-
-      if (result.hasException) {
-        throw _handleGraphQLException(result.exception!);
-      }
-
-      if (result.data == null || result.data!['rockets'] == null) {
+      if (response.data == null || response.data['docs'] == null) {
         return [];
       }
 
-      final List<dynamic> rocketsJson = result.data!['rockets'];
-      final List<Rocket> rockets = rocketsJson
-          .map((json) => Rocket.fromJson(json))
+      final List<dynamic> rocketsJson = response.data['docs'];
+      return rocketsJson
+          .map((json) => RocketEntity.fromJson(json))
           .toList();
-
-      return rockets.map(_mapToEntity).toList();
+    } on DioException catch (e) {
+      throw _handleDioException(e);
     } catch (e) {
-      if (e is app_exceptions.AppException) rethrow;
-      throw app_exceptions.ServerException('Failed to search rockets: ${e.toString()}');
+      throw NetworkException(message: 'Failed to search rockets: ${e.toString()}');
     }
   }
 
   @override
   Future<List<RocketEntity>> getRocketsByCompany(String company) async {
     try {
-      final QueryOptions options = QueryOptions(
-        document: gql(RocketQueries.getRocketsByCompany),
-        variables: {'company': company},
-        fetchPolicy: FetchPolicy.cacheAndNetwork,
-        errorPolicy: ErrorPolicy.all,
+      final response = await _client.post(
+        '/rockets/query',
+        data: {
+          'query': {'company': company},
+          'options': {
+            'limit': 100,
+            'page': 1,
+            'sort': {'name': 1}
+          }
+        },
       );
 
-      final QueryResult result = await _client.query(options);
-
-      if (result.hasException) {
-        throw _handleGraphQLException(result.exception!);
-      }
-
-      if (result.data == null || result.data!['rockets'] == null) {
+      if (response.data == null || response.data['docs'] == null) {
         return [];
       }
 
-      final List<dynamic> rocketsJson = result.data!['rockets'];
-      final List<Rocket> rockets = rocketsJson
-          .map((json) => Rocket.fromJson(json))
+      final List<dynamic> rocketsJson = response.data['docs'];
+      return rocketsJson
+          .map((json) => RocketEntity.fromJson(json))
           .toList();
-
-      return rockets.map(_mapToEntity).toList();
+    } on DioException catch (e) {
+      throw _handleDioException(e);
     } catch (e) {
-      if (e is app_exceptions.AppException) rethrow;
-      throw app_exceptions.ServerException('Failed to fetch rockets by company: ${e.toString()}');
+      throw NetworkException(message: 'Failed to fetch rockets by company: ${e.toString()}');
     }
   }
 
   @override
   Future<List<RocketEntity>> getRocketsWithImages() async {
     try {
-      final QueryOptions options = QueryOptions(
-        document: gql(RocketQueries.getRocketsWithImages),
-        fetchPolicy: FetchPolicy.cacheAndNetwork,
-        errorPolicy: ErrorPolicy.all,
+      final response = await _client.post(
+        '/rockets/query',
+        data: {
+          'query': {
+            'flickr_images': {'\$ne': []}
+          },
+          'options': {
+            'limit': 100,
+            'page': 1,
+            'sort': {'name': 1}
+          }
+        },
       );
 
-      final QueryResult result = await _client.query(options);
-
-      if (result.hasException) {
-        throw _handleGraphQLException(result.exception!);
-      }
-
-      if (result.data == null || result.data!['rockets'] == null) {
+      if (response.data == null || response.data['docs'] == null) {
         return [];
       }
 
-      final List<dynamic> rocketsJson = result.data!['rockets'];
-      final List<Rocket> rockets = rocketsJson
-          .map((json) => Rocket.fromJson(json))
+      final List<dynamic> rocketsJson = response.data['docs'];
+      return rocketsJson
+          .map((json) => RocketEntity.fromJson(json))
           .toList();
-
-      return rockets.map(_mapToEntity).toList();
+    } on DioException catch (e) {
+      throw _handleDioException(e);
     } catch (e) {
-      if (e is app_exceptions.AppException) rethrow;
-      throw app_exceptions.ServerException('Failed to fetch rockets with images: ${e.toString()}');
+      throw NetworkException(message: 'Failed to fetch rockets with images: ${e.toString()}');
     }
   }
 
   @override
   Future<List<RocketEntity>> refreshRockets() async {
     try {
-      // Clear cache before fetching fresh data
-      GraphQLService.clearCache();
-
-      final QueryOptions options = QueryOptions(
-        document: gql(RocketQueries.getAllRockets),
-        fetchPolicy: FetchPolicy.networkOnly,
-        errorPolicy: ErrorPolicy.all,
+      // For REST API, we simply fetch fresh data without cache
+      final response = await _client.post(
+        '/rockets/query',
+        data: {
+          'query': {},
+          'options': {
+            'limit': 100,
+            'page': 1,
+            'sort': {'name': 1}
+          }
+        },
       );
 
-      final QueryResult result = await _client.query(options);
-
-      if (result.hasException) {
-        throw _handleGraphQLException(result.exception!);
+      if (response.data == null || response.data['docs'] == null) {
+        throw const NetworkException(message: 'No rocket data received from server');
       }
 
-      if (result.data == null || result.data!['rockets'] == null) {
-        throw app_exceptions.ServerException('No rocket data received from server');
-      }
-
-      final List<dynamic> rocketsJson = result.data!['rockets'];
-      final List<Rocket> rockets = rocketsJson
-          .map((json) => Rocket.fromJson(json))
+      final List<dynamic> rocketsJson = response.data['docs'];
+      return rocketsJson
+          .map((json) => RocketEntity.fromJson(json))
           .toList();
-
-      return rockets.map(_mapToEntity).toList();
+    } on DioException catch (e) {
+      throw _handleDioException(e);
     } catch (e) {
-      if (e is app_exceptions.AppException) rethrow;
-      throw app_exceptions.ServerException('Failed to refresh rockets: ${e.toString()}');
+      throw NetworkException(message: 'Failed to refresh rockets: ${e.toString()}');
     }
   }
 
-  /// Maps Rocket data model to RocketEntity domain entity
-  RocketEntity _mapToEntity(Rocket rocket) {
-    return RocketEntity(
-      id: rocket.id,
-      name: rocket.name,
-      type: rocket.type,
-      active: rocket.active,
-      costPerLaunch: rocket.costPerLaunch,
-      successRatePct: rocket.successRatePct,
-      firstFlight: rocket.firstFlight,
-      country: rocket.country,
-      company: rocket.company,
-      height: rocket.height != null ? DimensionsEntity(
-        meters: rocket.height!.meters,
-        feet: rocket.height!.feet,
-      ) : null,
-      diameter: rocket.diameter != null ? DimensionsEntity(
-        meters: rocket.diameter!.meters,
-        feet: rocket.diameter!.feet,
-      ) : null,
-      mass: rocket.mass != null ? MassEntity(
-        kg: rocket.mass!.kg,
-        lb: rocket.mass!.lb,
-      ) : null,
-      description: rocket.description,
-    );
-  }
-
-  /// Handles GraphQL exceptions and converts them to appropriate app exceptions
-  app_exceptions.AppException _handleGraphQLException(OperationException exception) {
-    if (exception.linkException != null) {
-      final linkException = exception.linkException!;
-
-      if (linkException is NetworkException) {
-        return app_exceptions.NetworkException('Network error: Please check your internet connection');
-      }
-
-      if (linkException is ServerException) {
-        return app_exceptions.ServerException('Server error: ${linkException.toString()}');
-      }
-
-      return app_exceptions.NetworkException('Connection error: ${linkException.toString()}');
+  /// Handles Dio exceptions and converts them to appropriate network exceptions
+  NetworkException _handleDioException(DioException exception) {
+    switch (exception.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        return const NetworkException(message: 'Connection timeout. Please check your internet connection.');
+      
+      case DioExceptionType.badResponse:
+        final statusCode = exception.response?.statusCode;
+        if (statusCode != null) {
+          if (statusCode >= 500) {
+            return NetworkException(message: 'Server error ($statusCode). Please try again later.');
+          } else if (statusCode >= 400) {
+            return NetworkException(message: 'Client error ($statusCode). Please check your request.');
+          }
+        }
+        return const NetworkException(message: 'Bad response from server.');
+      
+      case DioExceptionType.cancel:
+        return const NetworkException(message: 'Request was cancelled.');
+      
+      case DioExceptionType.connectionError:
+        return const NetworkException(message: 'Connection error. Please check your internet connection.');
+      
+      case DioExceptionType.badCertificate:
+        return const NetworkException(message: 'Certificate error. Please check your connection security.');
+      
+      case DioExceptionType.unknown:
+        return NetworkException(message: 'Unknown error occurred: ${exception.message}');
     }
-
-    if (exception.graphqlErrors.isNotEmpty) {
-      final error = exception.graphqlErrors.first;
-      return app_exceptions.ServerException('GraphQL error: ${error.message}');
-    }
-
-    return app_exceptions.ServerException('Unknown error occurred');
   }
 }

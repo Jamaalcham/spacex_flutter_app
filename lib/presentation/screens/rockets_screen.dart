@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sizer/sizer.dart';
 import 'package:get/get.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../core/utils/colors.dart';
+import '../../core/utils/spacing.dart';
+import '../../core/utils/typography.dart';
 import '../../domain/entities/rocket_entity.dart';
 import '../providers/rocket_provider.dart';
-import '../widgets/common/modern_card.dart';
-import '../widgets/common/network_error_widget.dart';
 import '../widgets/common/glass_background.dart';
+import '../widgets/common/network_error_widget.dart';
+import 'rocket_detail_screen.dart';
 import '../widgets/common/custom_app_bar.dart';
+import '../widgets/loading/rocket_shimmer.dart';
 
-/// Rocket Gallery Screen - Task 2.2
-/// 
-/// Displays SpaceX rockets with immersive 3D-like presentations using
-/// gradient backgrounds and neumorphic/glassmorphism effects.
+// Rocket Gallery Screen - Task 2.2
 class RocketsScreen extends StatefulWidget {
   const RocketsScreen({super.key});
 
@@ -26,7 +27,7 @@ class _RocketsScreenState extends State<RocketsScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   bool _showSearch = false;
-  bool _isGridView = true;
+  bool _isGridView = false;
 
   @override
   void initState() {
@@ -46,7 +47,7 @@ class _RocketsScreenState extends State<RocketsScreen> {
     super.dispose();
   }
 
-  /// Handles scroll events for pagination
+  // Handles scroll events for pagination
   void _onScroll() {
     if (_scrollController.position.pixels >= 
         _scrollController.position.maxScrollExtent * 0.8) {
@@ -55,12 +56,17 @@ class _RocketsScreenState extends State<RocketsScreen> {
     }
   }
 
-  /// Handles search input changes
+  // Handles search input changes
   void _onSearchChanged(String query) {
     context.read<RocketProvider>().searchRockets(query);
   }
 
-  /// Shows rocket stats bottom sheet
+  // Handles filter selection
+  void _onFilterChanged(RocketFilter filter) {
+    context.read<RocketProvider>().filterRockets(filter);
+  }
+
+  // Shows rocket stats bottom sheet
   void _showStatsSheet() {
     showModalBottomSheet(
       context: context,
@@ -108,8 +114,6 @@ class _RocketsScreenState extends State<RocketsScreen> {
               CustomAppBar.rockets(
                 onSearch: () => setState(() => _showSearch = !_showSearch),
                 onFilter: _showFilterSheet,
-                onViewToggle: () => setState(() => _isGridView = !_isGridView),
-                isGridView: _isGridView,
               ),
               
               // Content
@@ -117,72 +121,6 @@ class _RocketsScreenState extends State<RocketsScreen> {
                 child: CustomScrollView(
                   controller: _scrollController,
                   slivers: [
-              
-              // Subtitle Section
-              SliverToBoxAdapter(
-                child: Container(
-                  margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-                  child: Text(
-                    'Immersive SpaceX Rocket Showcase',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white.withValues(alpha:0.8)
-                          : const Color(0xFF4A5568),
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ),
-              ),
-              
-              // Stats Section
-              SliverToBoxAdapter(
-                child: Container(
-                  margin: EdgeInsets.all(4.w),
-                  child: Consumer<RocketProvider>(
-                    builder: (context, provider, child) {
-                      final activeRockets = provider.rockets.where((r) => r.active == true).length;
-                      final totalRockets = provider.rockets.length;
-                      
-                      return Row(
-                        children: [
-                          Expanded(
-                            child: _buildStatCard(
-                              'Active\nRockets',
-                              activeRockets.toString(),
-                              Icons.rocket_launch,
-                              AppColors.missionGreen,
-                            ),
-                          ),
-                          SizedBox(width: 3.w),
-                          Expanded(
-                            child: _buildStatCard(
-                              'Total\nFleet',
-                              totalRockets.toString(),
-                              Icons.inventory,
-                              AppColors.rocketOrange,
-                            ),
-                          ),
-                          SizedBox(width: 3.w),
-                          Expanded(
-                            child: _buildStatCard(
-                              'Success\nRate',
-                              totalRockets > 0 
-                                ? '${((activeRockets / totalRockets) * 100).toInt()}%'
-                                : '0%',
-                              Icons.trending_up,
-                              AppColors.spaceBlue,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ),
-              
               // Search bar if enabled
               if (_showSearch)
                 SliverToBoxAdapter(
@@ -190,34 +128,124 @@ class _RocketsScreenState extends State<RocketsScreen> {
                     margin: EdgeInsets.all(4.w),
                     child: TextField(
                       controller: _searchController,
+                      style: AppTypography.getBody(isDark),
                       decoration: InputDecoration(
-                        hintText: 'Search rockets...',
-                        prefixIcon: const Icon(Icons.search),
+                        hintText: 'Search rockets by name or type...',
+                        hintStyle: AppTypography.getCaption(isDark),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: Icon(
+                                  Icons.clear,
+                                  color: isDark ? Colors.white70 : Colors.black54,
+                                ),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  _onSearchChanged('');
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: isDark 
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : Colors.white.withValues(alpha: 0.9),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: isDark 
+                                ? Colors.white.withValues(alpha: 0.2)
+                                : Colors.black.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: isDark 
+                                ? Colors.white.withValues(alpha: 0.2)
+                                : Colors.black.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: AppColors.spaceBlue,
+                            width: 2,
+                          ),
                         ),
                       ),
                       onChanged: (value) {
-                        // Implement search functionality
+                        _onSearchChanged(value);
+                        setState(() {}); // Rebuild to show/hide clear button
                       },
                     ),
                   ),
                 ),
               
+              // Search/Filter results indicator
+              Consumer<RocketProvider>(
+                builder: (context, provider, child) {
+                  if (provider.searchQuery.isNotEmpty || provider.currentFilter != RocketFilter.all) {
+                    return SliverToBoxAdapter(
+                      child: Container(
+                        margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.w),
+                        padding: EdgeInsets.all(3.w),
+                        decoration: BoxDecoration(
+                          color: isDark 
+                              ? AppColors.spaceBlue.withValues(alpha: 0.1)
+                              : AppColors.spaceBlue.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppColors.spaceBlue.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              color: AppColors.spaceBlue,
+                              size: 4.w,
+                            ),
+                            SizedBox(width: 2.w),
+                            Expanded(
+                              child: Text(
+                                _getResultsText(provider),
+                                style: AppTypography.getCaption(isDark).copyWith(
+                                  color: AppColors.spaceBlue,
+                                ),
+                              ),
+                            ),
+                            if (provider.searchQuery.isNotEmpty || provider.currentFilter != RocketFilter.all)
+                              TextButton(
+                                onPressed: () {
+                                  provider.clearFilters();
+                                  _searchController.clear();
+                                  setState(() {});
+                                },
+                                child: Text(
+                                  'Clear',
+                                  style: TextStyle(
+                                    color: AppColors.spaceBlue,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                  return const SliverToBoxAdapter(child: SizedBox.shrink());
+                },
+              ),
+
               // Rocket content
               Consumer<RocketProvider>(
                 builder: (context, provider, child) {
                   if (provider.isLoading && provider.rockets.isEmpty) {
-                    return SliverToBoxAdapter(
-                      child: Container(
-                        height: 50.h,
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        ),
-                      ),
-                    );
+                    return const RocketListSliverShimmer();
                   }
                   
                   if (provider.error != null && provider.rockets.isEmpty) {
@@ -225,6 +253,12 @@ class _RocketsScreenState extends State<RocketsScreen> {
                       child: NetworkErrorWidget(
                         onRetry: () => provider.fetchRockets(),
                       ),
+                    );
+                  }
+
+                  if (provider.rockets.isEmpty && !provider.isLoading) {
+                    return SliverToBoxAdapter(
+                      child: _buildEmptyState(provider, isDark),
                     );
                   }
                   
@@ -242,35 +276,290 @@ class _RocketsScreenState extends State<RocketsScreen> {
 
   /// Shows filter bottom sheet
   void _showFilterSheet() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: EdgeInsets.all(4.w),
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      builder: (context) => Consumer<RocketProvider>(
+        builder: (context, provider, child) => Container(
+          padding: EdgeInsets.only(
+            left: 4.w,
+            right: 4.w,
+            top: 4.w,
+            bottom: MediaQuery.of(context).viewPadding.bottom + 4.w,
+          ),
+          decoration: BoxDecoration(
+            color: isDark 
+                ? const Color(0xFF1A1A1A).withValues(alpha: 0.95)
+                : Colors.white.withValues(alpha: 0.95),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            border: Border.all(
+              color: isDark 
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.1),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Center(
+                child: Container(
+                  width: 12.w,
+                  height: 1.w,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white54 : Colors.black54,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              SizedBox(height: 4.w),
+              Text(
+                'Filter Rockets',
+                style: AppTypography.getHeadline(isDark),
+              ),
+              SizedBox(height: 4.w),
+              
+              // Filter options
+              _buildFilterOption(
+                'All Rockets',
+                'Show all available rockets',
+                Icons.rocket_launch,
+                RocketFilter.all,
+                provider.currentFilter,
+                isDark,
+              ),
+              _buildFilterOption(
+                'Active Rockets',
+                'Currently operational rockets',
+                Icons.check_circle,
+                RocketFilter.active,
+                provider.currentFilter,
+                isDark,
+              ),
+              _buildFilterOption(
+                'Retired Rockets',
+                'No longer in service',
+                Icons.history,
+                RocketFilter.retired,
+                provider.currentFilter,
+                isDark,
+              ),
+              
+              SizedBox(height: 4.w),
+              
+              // Clear filters button
+              if (provider.currentFilter != RocketFilter.all || provider.searchQuery.isNotEmpty)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      provider.clearFilters();
+                      _searchController.clear();
+                      Get.back();
+                    },
+                    icon: const Icon(Icons.clear_all),
+                    label: const Text('Clear All Filters'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 3.w),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              
+              SizedBox(height: 2.w),
+            ],
+          ),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Filter Options',
-              style: TextStyle(
-                fontSize: 5.w,
-                fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+
+  /// Builds individual filter option
+  Widget _buildFilterOption(
+    String title,
+    String subtitle,
+    IconData icon,
+    RocketFilter filter,
+    RocketFilter currentFilter,
+    bool isDark,
+  ) {
+    final isSelected = filter == currentFilter;
+    
+    return Container(
+      margin: EdgeInsets.only(bottom: 2.w),
+      child: InkWell(
+        onTap: () {
+          _onFilterChanged(filter);
+          Get.back();
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: EdgeInsets.all(3.w),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? (isDark ? AppColors.spaceBlue.withValues(alpha: 0.2) : AppColors.spaceBlue.withValues(alpha: 0.1))
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.spaceBlue
+                  : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.1)),
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(2.w),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.spaceBlue
+                      : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.1)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark ? Colors.white70 : Colors.black87),
+                  size: 5.w,
+                ),
+              ),
+              SizedBox(width: 3.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTypography.getBody(isDark).copyWith(
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: isSelected
+                            ? AppColors.spaceBlue
+                            : (isDark ? Colors.white : Colors.black87),
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: AppTypography.getCaption(isDark),
+                    ),
+                  ],
+                ),
+              ),
+              if (isSelected)
+                Icon(
+                  Icons.check_circle,
+                  color: AppColors.spaceBlue,
+                  size: 5.w,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Gets results text for search/filter indicator
+  String _getResultsText(RocketProvider provider) {
+    final count = provider.rockets.length;
+    
+    if (provider.searchQuery.isNotEmpty && provider.currentFilter != RocketFilter.all) {
+      final filterName = _getFilterName(provider.currentFilter);
+      return 'Found $count $filterName rockets matching "${provider.searchQuery}"';
+    } else if (provider.searchQuery.isNotEmpty) {
+      return 'Found $count rockets matching "${provider.searchQuery}"';
+    } else if (provider.currentFilter != RocketFilter.all) {
+      final filterName = _getFilterName(provider.currentFilter);
+      return 'Showing $count $filterName rockets';
+    }
+    
+    return 'Showing $count rockets';
+  }
+
+  /// Gets filter name for display
+  String _getFilterName(RocketFilter filter) {
+    switch (filter) {
+      case RocketFilter.active:
+        return 'active';
+      case RocketFilter.retired:
+        return 'retired';
+      case RocketFilter.all:
+        return '';
+    }
+  }
+
+  /// Builds empty state widget
+  Widget _buildEmptyState(RocketProvider provider, bool isDark) {
+    return Container(
+      height: 40.h,
+      padding: EdgeInsets.all(4.w),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            provider.searchQuery.isNotEmpty 
+                ? Icons.search_off 
+                : Icons.rocket_launch_outlined,
+            size: 15.w,
+            color: isDark ? Colors.white38 : Colors.black38,
+          ),
+          SizedBox(height: 4.w),
+          Text(
+            provider.searchQuery.isNotEmpty 
+                ? 'No rockets found'
+                : 'No rockets available',
+            style: AppTypography.getTitle(isDark).copyWith(
+              color: isDark ? Colors.white60 : Colors.black54,
+            ),
+          ),
+          SizedBox(height: 2.w),
+          Text(
+            provider.searchQuery.isNotEmpty 
+                ? 'Try adjusting your search terms or filters'
+                : 'Check your connection and try again',
+            style: AppTypography.getCaption(isDark),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 4.w),
+          if (provider.searchQuery.isNotEmpty || provider.currentFilter != RocketFilter.all)
+            ElevatedButton.icon(
+              onPressed: () {
+                provider.clearFilters();
+                _searchController.clear();
+                setState(() {});
+              },
+              icon: const Icon(Icons.clear_all),
+              label: const Text('Clear Filters'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.spaceBlue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            )
+          else
+            ElevatedButton.icon(
+              onPressed: () => provider.fetchRockets(),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.spaceBlue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
-            SizedBox(height: 4.w),
-            Text('Filter functionality coming soon!'),
-            SizedBox(height: 4.w),
-            ElevatedButton(
-              onPressed: () => Get.back(),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -315,254 +604,250 @@ class _RocketsScreenState extends State<RocketsScreen> {
 
   /// Builds the rocket content based on view type
   Widget _buildRocketContent(RocketProvider provider, bool isDark) {
-    if (_isGridView) {
-      return SliverPadding(
-        padding: EdgeInsets.all(4.w),
-        sliver: SliverGrid(
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.75,
-            crossAxisSpacing: 4.w,
-            mainAxisSpacing: 4.w,
-          ),
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              if (index >= provider.rockets.length) {
-                return provider.isLoading
-                    ? Container(
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        ),
-                      )
-                    : const SizedBox.shrink();
-              }
-              return _buildRocketGridCard(provider.rockets[index], isDark);
-            },
-            childCount: provider.rockets.length + (provider.isLoading ? 1 : 0),
-          ),
-        ),
-      );
-    } else {
-      return SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            if (index >= provider.rockets.length) {
-              return provider.isLoading
-                  ? Container(
-                      height: 10.h,
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      ),
-                    )
-                  : const SizedBox.shrink();
-            }
-            return _buildRocketListCard(provider.rockets[index], isDark);
-          },
-          childCount: provider.rockets.length + (provider.isLoading ? 1 : 0),
-        ),
-      );
-    }
-  }
-
-  /// Builds rocket grid card with 3D visual effects
-  Widget _buildRocketGridCard(RocketEntity rocket, bool isDark) {
-    return ModernCard(
-      isDark: isDark,
-      onTap: () => _navigateToRocketDetail(rocket),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Rocket status indicator
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.w),
-            decoration: BoxDecoration(
-              color: rocket.active == true
-                  ? AppColors.missionGreen
-                  : AppColors.textSecondary,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              rocket.active == true ? 'ACTIVE' : 'RETIRED',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 8.sp,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          SizedBox(height: 2.w),
-          Text(
-            rocket.name ?? 'Unknown Rocket',
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white : Colors.black87,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          SizedBox(height: 1.w),
-          Flexible(
-            child: Text(
-              rocket.description ?? 'No description available',
-              style: TextStyle(
-                fontSize: 10.sp,
-                color: isDark ? Colors.white70 : Colors.black54,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          SizedBox(height: 1.w),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Flexible(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.height,
-                      size: 12.sp,
-                      color: AppColors.textSecondary,
-                    ),
-                    SizedBox(width: 1.w),
-                    Flexible(
-                      child: Text(
-                        '${rocket.height?.meters?.toInt() ?? 0}m',
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+    // Always use list view to match the uploaded design
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          if (index >= provider.rockets.length) {
+            return provider.isLoading
+                ? SizedBox(
+                    height: 10.h,
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              SizedBox(width: 2.w),
-              Flexible(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.fitness_center,
-                      size: 12.sp,
-                      color: AppColors.textSecondary,
-                    ),
-                    SizedBox(width: 1.w),
-                    Flexible(
-                      child: Text(
-                        '${rocket.mass?.kg?.toInt() ?? 0}kg',
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+                  )
+                : const SizedBox.shrink();
+          }
+          return _buildRocketCard(provider.rockets[index], isDark);
+        },
+        childCount: provider.rockets.length + (provider.isLoading ? 1 : 0),
       ),
     );
   }
 
-  /// Builds rocket list card with modern design
-  Widget _buildRocketListCard(RocketEntity rocket, bool isDark) {
-    return ModernCard(
-      isDark: isDark,
+  /// Builds rocket card matching the uploaded design exactly
+  Widget _buildRocketCard(RocketEntity rocket, bool isDark) {
+    String? rocketImageUrl = rocket.flickrImages.isNotEmpty == true
+        ? rocket.flickrImages.first
+        : null;
+    
+    String subtitle = _generateRocketSubtitle(rocket);
+    
+    return GestureDetector(
       onTap: () => _navigateToRocketDetail(rocket),
-      margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.w),
-      child: Row(
-        children: [
-          ModernIconContainer(
-            icon: rocket.active == true
-                ? Icons.rocket_launch
-                : Icons.rocket,
-            gradientColors: rocket.active == true
-                ? [AppColors.missionGreen, AppColors.missionGreen]
-                : [AppColors.textSecondary, AppColors.textSecondary],
-            size: 12.sp,
-            iconSize: 5.w,
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 3.w),
+        decoration: BoxDecoration(
+          color: isDark 
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.white.withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.white.withValues(alpha: 0.8),
           ),
-          SizedBox(width: 4.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  rocket.name ?? 'Unknown Rocket',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                ),
-                SizedBox(height: 1.w),
-                Text(
-                  rocket.description ?? 'No description available',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: isDark ? Colors.white70 : Colors.black54,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 2.w),
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        'Height: ${rocket.height?.meters?.toInt() ?? 0}m',
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    SizedBox(width: 4.w),
-                    Flexible(
-                      child: Text(
-                        'Mass: ${rocket.mass?.kg?.toInt() ?? 0}kg',
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-          ),
-          Icon(
-            Icons.arrow_forward_ios,
-            size: 16.sp,
-            color: AppColors.textSecondary,
-          ),
-        ],
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Large rocket image at the top
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: Container(
+                height: 30.h,
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      AppColors.spaceBlue,
+                      AppColors.stellarBlue,
+                    ],
+                  ),
+                ),
+                child: rocketImageUrl != null
+                    ? CachedNetworkImage(
+                        imageUrl: rocketImageUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                AppColors.spaceBlue,
+                                AppColors.stellarBlue,
+                              ],
+                            ),
+                          ),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white.withValues(alpha: 0.7),
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => _buildRocketPlaceholder(),
+                      )
+                    : _buildRocketPlaceholder(),
+              ),
+            ),
+            
+            // Content section
+            Padding(
+              padding: EdgeInsets.all(4.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Rocket name (main title)
+                  Text(
+                    rocket.name ?? 'Unknown Rocket',
+                    style: AppTypography.getTitle(isDark),
+                  ),
+                  
+                  SizedBox(height: 1.w),
+                  
+                  // Subtitle
+                  Text(
+                    subtitle,
+                    style: AppTypography.getCaption(isDark).copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  
+                  SizedBox(height: 3.w),
+                  
+                  // Description
+                  Text(
+                    rocket.description ?? 'No description available',
+                    style: AppTypography.getBody(isDark),
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  
+                  SizedBox(height: 4.w),
+                  
+                  // More Details button
+                  GestureDetector(
+                    onTap: () => _navigateToRocketDetail(rocket),
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(vertical: 3.w),
+                      decoration: BoxDecoration(
+                        color: isDark 
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : Colors.white.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.1)
+                              : Colors.white.withValues(alpha: 0.8),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'More Details',
+                            style: AppTypography.getCaption(isDark).copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF3B82F6),
+                            ),
+                          ),
+                          SizedBox(width: 2.w),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            color: const Color(0xFF3B82F6),
+                            size: 16.sp,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Generates appropriate subtitle for rocket
+  String _generateRocketSubtitle(RocketEntity rocket) {
+    if (rocket.name?.toLowerCase().contains('falcon 9') == true) {
+      return 'Reusable Two-Stage Rocket';
+    } else if (rocket.name?.toLowerCase().contains('falcon heavy') == true) {
+      return 'Heavy-Lift Launch Vehicle';
+    } else if (rocket.name?.toLowerCase().contains('starship') == true) {
+      return 'Interplanetary Spacecraft';
+    } else if (rocket.name?.toLowerCase().contains('falcon 1') == true) {
+      return 'Light-Lift Launch Vehicle';
+    } else if (rocket.stages != null && rocket.stages! > 1) {
+      return 'Multi-Stage Launch Vehicle';
+    } else if (rocket.active == true) {
+      return 'Active Launch Vehicle';
+    } else {
+      return 'Retired Launch Vehicle';
+    }
+  }
+
+  /// Builds placeholder for rocket image
+  Widget _buildRocketPlaceholder() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.spaceBlue,
+            AppColors.stellarBlue,
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.rocket_launch,
+              size: 15.w,
+              color: Colors.white.withValues(alpha: 0.7),
+            ),
+            SizedBox(height: 2.w),
+            Text(
+              'Rocket Image',
+              style: AppTypography.getBody(false).copyWith(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   /// Navigates to rocket detail screen
   void _navigateToRocketDetail(RocketEntity rocket) {
-    Get.snackbar(
-      'Rocket Selected',
-      rocket.name ?? 'Unknown Rocket',
-      backgroundColor: AppColors.rocketOrange.withValues(alpha:0.8),
-      colorText: Colors.white,
+    Get.to(
+      () => RocketDetailScreen(
+        rocketId: rocket.id,
+        rocket: rocket,
+      ),
+      transition: Transition.rightToLeft,
+      duration: const Duration(milliseconds: 300),
     );
   }
 }

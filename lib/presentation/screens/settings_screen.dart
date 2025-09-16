@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sizer/sizer.dart';
+import 'package:get/get.dart';
 
 import '../../core/utils/colors.dart';
+import '../../core/utils/spacing.dart';
+import '../../core/utils/typography.dart';
 import '../providers/theme_provider.dart';
 import '../providers/language_provider.dart';
 import '../widgets/common/glass_background.dart';
@@ -35,7 +38,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // Settings Content
               Expanded(
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(horizontal: 4.w),
+                  padding: AppSpacing.paddingHorizontalM,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -71,14 +74,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 
   Widget _buildSectionLabel(String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Text(
       title,
-      style: TextStyle(
-        fontSize: 13.sp,
-        fontWeight: FontWeight.w600,
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Colors.white60
-            : Colors.black54,
+      style: AppTypography.getCaption(isDark).copyWith(
+        fontWeight: AppTypography.medium,
         letterSpacing: 0.5,
       ),
     );
@@ -91,34 +91,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
         
         return Container(
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.8),
+            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha:0.8),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
+              color: isDark ? Colors.white.withValues(alpha:0.1) : Colors.black.withValues(alpha:0.1),
               width: 0.5,
             ),
           ),
           child: Column(
             children: [
               _buildSettingItem(
-                icon: Icons.dark_mode_outlined,
+                icon: themeProvider.themeMode == ThemeMode.dark 
+                    ? Icons.dark_mode 
+                    : Icons.light_mode_outlined,
                 title: 'Dark Mode',
                 trailing: Switch(
                   value: themeProvider.themeMode == ThemeMode.dark,
                   onChanged: (value) {
                     themeProvider.setThemeMode(value ? ThemeMode.dark : ThemeMode.light);
-                  },
-                  activeColor: AppColors.spaceBlue,
-                ),
-              ),
-              _buildDivider(),
-              _buildSettingItem(
-                icon: Icons.light_mode_outlined,
-                title: 'Light Mode',
-                trailing: Switch(
-                  value: themeProvider.themeMode == ThemeMode.light,
-                  onChanged: (value) {
-                    themeProvider.setThemeMode(value ? ThemeMode.light : ThemeMode.dark);
                   },
                   activeColor: AppColors.spaceBlue,
                 ),
@@ -135,10 +125,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.8),
+        color: isDark ? Colors.white.withValues(alpha:0.05) : Colors.white.withValues(alpha:0.8),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
+          color: isDark ? Colors.white.withValues(alpha:0.1) : Colors.black.withValues(alpha:0.1),
           width: 0.5,
         ),
       ),
@@ -180,10 +170,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.8),
+        color: isDark ? Colors.white.withValues(alpha:0.05) : Colors.white.withValues(alpha:0.8),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
+          color: isDark ? Colors.white.withValues(alpha:0.1) : Colors.black.withValues(alpha:0.1),
           width: 0.5,
         ),
       ),
@@ -250,20 +240,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Text(
                     title,
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w400,
-                      color: isDark ? Colors.white : Colors.black87,
-                    ),
+                    style: AppTypography.getBody(isDark),
                   ),
                   if (subtitle != null) ...[
                     SizedBox(height: 0.5.h),
                     Text(
                       subtitle,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: isDark ? Colors.white60 : Colors.black54,
-                      ),
+                      style: AppTypography.getCaption(isDark),
                     ),
                   ],
                 ],
@@ -281,15 +264,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Divider(
       height: 1,
       thickness: 0.5,
-      color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
+      color: isDark ? Colors.white.withValues(alpha:0.1) : Colors.black.withValues(alpha:0.1),
       indent: 14.w,
     );
   }
 
   void _showLanguageDialog(LanguageProvider languageProvider) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+    Get.dialog(
+      AlertDialog(
         backgroundColor: Theme.of(context).brightness == Brightness.dark
             ? const Color(0xFF1C1C1E)
             : Colors.white,
@@ -298,11 +280,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         title: Text(
           'Choose Language',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white
-                : Colors.black87,
+          style: AppTypography.getTitle(Theme.of(context).brightness == Brightness.dark).copyWith(
+            fontWeight: AppTypography.medium,
           ),
         ),
         content: Column(
@@ -332,9 +311,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isSelected = languageProvider.locale == locale;
     
     return InkWell(
-      onTap: () {
-        languageProvider.setLanguage(locale);
-        Navigator.of(context).pop();
+      onTap: () async {
+        await languageProvider.changeLanguage(locale.languageCode, context);
+        Get.back();
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -342,7 +321,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         margin: EdgeInsets.symmetric(vertical: 1.w),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.spaceBlue.withOpacity(0.1)
+              ? AppColors.spaceBlue.withValues(alpha:0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
@@ -356,13 +335,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Text(
               title,
-              style: TextStyle(
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+              style: AppTypography.getBody(Theme.of(context).brightness == Brightness.dark).copyWith(
+                fontWeight: isSelected ? AppTypography.medium : AppTypography.regular,
                 color: isSelected
                     ? AppColors.spaceBlue
-                    : (Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white
-                        : Colors.black87),
+                    : null,
               ),
             ),
           ],
