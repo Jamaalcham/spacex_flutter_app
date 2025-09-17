@@ -4,11 +4,22 @@ import 'package:flutter/material.dart';
 class GraphQLService {
   static const String _endpoint = 'https://spacex-production.up.railway.app/';
 
-  static HttpLink _httpLink = HttpLink(_endpoint);
+  static HttpLink _httpLink = HttpLink(
+    _endpoint,
+    defaultHeaders: {
+      'Content-Type': 'application/json',
+    },
+  );
 
   static GraphQLClient _client = GraphQLClient(
     link: _httpLink,
     cache: GraphQLCache(store: InMemoryStore()),
+    defaultPolicies: DefaultPolicies(
+      query: Policies(
+        fetch: FetchPolicy.cacheAndNetwork,
+        error: ErrorPolicy.all,
+      ),
+    ),
   );
 
   static GraphQLClient get client => _client;
@@ -21,10 +32,21 @@ class GraphQLService {
   }
 
   static void updateEndpoint(String newEndpoint) {
-    _httpLink = HttpLink(newEndpoint);
+    _httpLink = HttpLink(
+      newEndpoint,
+      defaultHeaders: {
+        'Content-Type': 'application/json',
+      },
+    );
     _client = GraphQLClient(
       link: _httpLink,
       cache: GraphQLCache(store: InMemoryStore()),
+      defaultPolicies: DefaultPolicies(
+        query: Policies(
+          fetch: FetchPolicy.cacheAndNetwork,
+          error: ErrorPolicy.all,
+        ),
+      ),
     );
   }
 }

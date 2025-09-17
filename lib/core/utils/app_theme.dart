@@ -74,7 +74,7 @@ class AppTheme {
       ),
       
       // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.surface,
         elevation: elevationMedium,
         shadowColor: Colors.black26,
@@ -96,7 +96,7 @@ class AppTheme {
       ),
       
       // Tab Bar
-      tabBarTheme: const TabBarTheme(
+      tabBarTheme: const TabBarThemeData(
         labelColor: AppColors.darkTextPrimary,
         unselectedLabelColor: AppColors.darkTextSecondary,
         indicatorColor: AppColors.primary,
@@ -361,7 +361,7 @@ class AppTheme {
       ),
       
       // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.lightSurface,
         elevation: elevationMedium,
         shadowColor: Colors.black12,
@@ -389,7 +389,7 @@ class AppTheme {
       ),
       
       // Tab Bar
-      tabBarTheme: const TabBarTheme(
+      tabBarTheme: const TabBarThemeData(
         labelColor: AppColors.lightTextPrimary,
         unselectedLabelColor: AppColors.lightTextSecondary,
         indicatorColor: AppColors.cosmicBlue,

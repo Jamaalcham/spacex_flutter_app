@@ -148,6 +148,7 @@ class LaunchRocket {
   });
 
   factory LaunchRocket.fromJson(Map<String, dynamic> json) {
+    // Both GraphQL and REST API use rocket_name field
     return LaunchRocket(
       rocketId: json['rocket_id']?.toString() ?? '',
       rocketName: json['rocket_name']?.toString() ?? '',
@@ -218,7 +219,7 @@ class Launch {
   final LaunchRocket rocket;
   
   /// Launch site information
-  final LaunchSite launchSite;
+  final LaunchSite? launchSite;
   
   /// Links to media and additional information
   final LaunchLinks links;
@@ -250,7 +251,7 @@ class Launch {
     required this.upcoming,
     this.details,
     required this.rocket,
-    required this.launchSite,
+    this.launchSite,
     required this.links,
     this.staticFireDateUtc,
     this.staticFireDateUnix,
@@ -260,8 +261,35 @@ class Launch {
 
   /// Creates a Launch instance from JSON data
   /// 
-  /// Handles complex nested objects and provides safe defaults
+  /// Handles both REST API and GraphQL response formats
   factory Launch.fromJson(Map<String, dynamic> json) {
+    // Handle GraphQL format (uses same field names as REST API)
+    if (json.containsKey('id') && json.containsKey('mission_name')) {
+      return Launch(
+        flightNumber: 0, // Not available in GraphQL
+        missionName: json['mission_name']?.toString() ?? 'Unknown Mission',
+        missionId: [], // Not available in GraphQL
+        launchYear: _extractYear(json['launch_date_utc']),
+        launchDateUnix: json['launch_date_unix']?.toInt() ?? 0,
+        launchDateUtc: json['launch_date_utc']?.toString() ?? '',
+        launchDateLocal: json['launch_date_utc']?.toString() ?? '', // Use UTC as fallback
+        isTentative: false, // Not available in GraphQL
+        tentativeMaxPrecision: null,
+        launchSuccess: json['launch_success'],
+        launchFailureDetails: null,
+        upcoming: json['upcoming'] ?? false,
+        details: json['details']?.toString(),
+        rocket: LaunchRocket.fromJson(json['rocket'] ?? {}),
+        launchSite: null, // Not available in current GraphQL query
+        links: LaunchLinks.fromJson({}), // Not available in current GraphQL query
+        staticFireDateUtc: null,
+        staticFireDateUnix: null,
+        timeline: null,
+        crew: [],
+      );
+    }
+    
+    // Handle REST API format (original implementation)
     return Launch(
       flightNumber: json['flight_number']?.toInt() ?? 0,
       missionName: json['mission_name']?.toString() ?? 'Unknown Mission',
@@ -279,7 +307,7 @@ class Launch {
       upcoming: json['upcoming'] ?? false,
       details: json['details']?.toString(),
       rocket: LaunchRocket.fromJson(json['rocket'] ?? {}),
-      launchSite: LaunchSite.fromJson(json['launch_site'] ?? {}),
+      launchSite: json['launch_site'] != null ? LaunchSite.fromJson(json['launch_site']) : null,
       links: LaunchLinks.fromJson(json['links'] ?? {}),
       staticFireDateUtc: json['static_fire_date_utc']?.toString(),
       staticFireDateUnix: json['static_fire_date_unix']?.toInt(),
@@ -288,6 +316,16 @@ class Launch {
           ? List<String>.from(json['crew'].map((x) => x.toString()))
           : [],
     );
+  }
+
+  /// Helper method to extract year from date string
+  static String _extractYear(String? dateString) {
+    if (dateString == null) return '';
+    try {
+      return DateTime.parse(dateString).year.toString();
+    } catch (e) {
+      return '';
+    }
   }
 
   /// Converts Launch instance to JSON format
@@ -307,7 +345,7 @@ class Launch {
       'upcoming': upcoming,
       'details': details,
       'rocket': rocket.toJson(),
-      'launch_site': launchSite.toJson(),
+      'launch_site': launchSite?.toJson(),
       'links': links.toJson(),
       'static_fire_date_utc': staticFireDateUtc,
       'static_fire_date_unix': staticFireDateUnix,

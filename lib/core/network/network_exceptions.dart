@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 
-/// Custom network exceptions for better error handling
+// Custom network exceptions for better error handling
 class NetworkException implements Exception {
   final String message;
   final int? statusCode;
@@ -16,7 +16,7 @@ class NetworkException implements Exception {
   String toString() => 'NetworkException: $message';
 }
 
-/// Network exception handler
+// Network exception handler
 class NetworkExceptionHandler {
   static NetworkException handleDioError(DioException error) {
     switch (error.type) {
@@ -58,8 +58,7 @@ class NetworkExceptionHandler {
         );
       
       case DioExceptionType.unknown:
-      default:
-        return NetworkException(
+      return NetworkException(
           message: error.message ?? 'An unexpected error occurred.',
         );
     }

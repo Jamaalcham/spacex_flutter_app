@@ -37,10 +37,10 @@ class CustomAppBar extends StatelessWidget {
 
   /// Factory constructor for Launches screen
   factory CustomAppBar.launches({
-    required VoidCallback onRefresh,
+    VoidCallback? onRefresh,
   }) {
     return CustomAppBar(
-      title: 'Launches',
+      title: 'Explorer',
       onRefresh: onRefresh,
     );
   }

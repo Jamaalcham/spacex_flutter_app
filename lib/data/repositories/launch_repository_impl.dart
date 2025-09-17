@@ -4,7 +4,7 @@ import '../../core/network/graphql_client.dart';
 import '../../domain/entities/launch_entity.dart';
 import '../../domain/repositories/launch_repository.dart';
 import '../models/launch_model.dart';
-import '../queries/launch_queries.dart';
+import '../queries/launches_query.dart';
 import '../../core/utils/exceptions.dart' as app_exceptions;
 
 /// Implementation of LaunchRepository using GraphQL
@@ -25,7 +25,7 @@ class LaunchRepositoryImpl implements LaunchRepository {
   }) async {
     try {
       final result = await _client.query(QueryOptions(
-        document: gql(LaunchQueries.getLaunchesWithPagination),
+        document: gql(launchesQuery),
         variables: {
           'limit': limit,
           'offset': offset,
@@ -59,7 +59,7 @@ class LaunchRepositoryImpl implements LaunchRepository {
   Future<List<LaunchEntity>> getUpcomingLaunches() async {
     try {
       final QueryOptions options = QueryOptions(
-        document: gql(LaunchQueries.getUpcomingLaunches),
+        document: gql(launchesQuery),
         fetchPolicy: FetchPolicy.cacheAndNetwork,
         errorPolicy: ErrorPolicy.all,
       );
@@ -90,7 +90,7 @@ class LaunchRepositoryImpl implements LaunchRepository {
   Future<List<LaunchEntity>> getPastLaunches({int limit = 50}) async {
     try {
       final QueryOptions options = QueryOptions(
-        document: gql(LaunchQueries.getPastLaunches),
+        document: gql(launchesQuery),
         variables: {'limit': limit},
         fetchPolicy: FetchPolicy.cacheAndNetwork,
         errorPolicy: ErrorPolicy.all,
@@ -126,7 +126,7 @@ class LaunchRepositoryImpl implements LaunchRepository {
   }) async {
     try {
       final QueryOptions options = QueryOptions(
-        document: gql(LaunchQueries.searchLaunches),
+        document: gql(launchesQuery),
         variables: {
           'searchTerm': searchTerm,
           'limit': limit,
@@ -165,7 +165,7 @@ class LaunchRepositoryImpl implements LaunchRepository {
   }) async {
     try {
       final QueryOptions options = QueryOptions(
-        document: gql(LaunchQueries.getAllLaunches),
+        document: gql(launchesQuery),
         variables: {
           'success': success,
           'limit': limit,
@@ -203,7 +203,7 @@ class LaunchRepositoryImpl implements LaunchRepository {
   }) async {
     try {
       final QueryOptions options = QueryOptions(
-        document: gql(LaunchQueries.getAllLaunches),
+        document: gql(launchesQuery),
         variables: {
           'startDate': startDate,
           'endDate': endDate,
@@ -260,7 +260,7 @@ class LaunchRepositoryImpl implements LaunchRepository {
       GraphQLService.clearCache();
 
       final QueryOptions options = QueryOptions(
-        document: gql(LaunchQueries.getAllLaunches),
+        document: gql(launchesQuery),
         fetchPolicy: FetchPolicy.networkOnly,
         errorPolicy: ErrorPolicy.all,
       );
@@ -313,9 +313,9 @@ class LaunchRepositoryImpl implements LaunchRepository {
         landingSuccess: null, // Not available in current model
       ),
       launchSite: LaunchSiteEntity(
-        id: launch.launchSite.siteId,
-        name: launch.launchSite.siteName,
-        nameShort: launch.launchSite.siteName, // Use siteName as short name
+        id: launch.launchSite!.siteId,
+        name: launch.launchSite!.siteName,
+        nameShort: launch.launchSite!.siteName, // Use siteName as short name
       ),
     );
   }
@@ -326,7 +326,7 @@ class LaunchRepositoryImpl implements LaunchRepository {
       final linkException = exception.linkException!;
 
       if (linkException is NetworkException) {
-        return app_exceptions.NetworkException('Network error: Please check your internet connection');
+        return const app_exceptions.NetworkException('Network error: Please check your internet connection');
       }
 
       if (linkException is ServerException) {

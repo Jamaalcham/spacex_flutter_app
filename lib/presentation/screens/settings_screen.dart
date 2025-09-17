@@ -110,7 +110,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onChanged: (value) {
                     themeProvider.setThemeMode(value ? ThemeMode.dark : ThemeMode.light);
                   },
-                  activeColor: AppColors.spaceBlue,
+                  activeColor: isDark ? Colors.grey[400] :AppColors.spaceBlue,
+                  inactiveThumbColor: isDark ? Colors.grey[400] : Colors.grey[600],
+                  inactiveTrackColor: isDark
+                      ? Colors.grey[800]
+                      : Colors.grey[300],
                 ),
               ),
             ],
@@ -228,10 +232,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: EdgeInsets.all(4.w),
         child: Row(
           children: [
-            Icon(
-              icon,
-              size: 6.w,
-              color: isDark ? Colors.white70 : Colors.black87,
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                  color: AppColors.spaceBlue,
+                
+                borderRadius: BorderRadius.circular(50)
+              ),
+              child: Icon(
+                icon,
+                size: 6.w,
+                color: isDark ? Colors.white : Colors.white,
+              ),
             ),
             SizedBox(width: 4.w),
             Expanded(

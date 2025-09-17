@@ -2,9 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'api_endpoints.dart';
 
-/// REST Client for SpaceX API
-/// 
-/// Provides a configured Dio instance for making HTTP requests to the SpaceX API
+// REST Client for SpaceX API
+// Provides a configured Dio instance for making HTTP requests to the SpaceX API
 class RestClient {
   static RestClient? _instance;
   late final Dio _dio;
@@ -14,16 +13,16 @@ class RestClient {
     _setupDio();
   }
 
-  /// Singleton instance
+  // Singleton instance
   static RestClient get instance {
     _instance ??= RestClient._internal();
     return _instance!;
   }
 
-  /// Get the configured Dio instance
+  // Get the configured Dio instance
   Dio get dio => _dio;
 
-  /// Setup Dio configuration
+  // Setup Dio configuration
   void _setupDio() {
     _dio.options = BaseOptions(
       baseUrl: ApiEndpoints.baseUrl,
@@ -41,7 +40,7 @@ class RestClient {
     _dio.interceptors.add(_createErrorInterceptor());
   }
 
-  /// Create logging interceptor
+  // Create logging interceptor
   Interceptor _createLogInterceptor() {
     return LogInterceptor(
       requestBody: kDebugMode,
@@ -57,7 +56,7 @@ class RestClient {
     );
   }
 
-  /// Create error handling interceptor
+  // Create error handling interceptor
   Interceptor _createErrorInterceptor() {
     return InterceptorsWrapper(
       onError: (error, handler) {
@@ -71,7 +70,7 @@ class RestClient {
     );
   }
 
-  /// GET request
+  // GET request
   Future<Response<T>> get<T>(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -90,7 +89,7 @@ class RestClient {
     }
   }
 
-  /// POST request
+  // POST request
   Future<Response<T>> post<T>(
     String path, {
     dynamic data,
@@ -111,7 +110,7 @@ class RestClient {
     }
   }
 
-  /// PUT request
+  // PUT request
   Future<Response<T>> put<T>(
     String path, {
     dynamic data,
@@ -132,7 +131,7 @@ class RestClient {
     }
   }
 
-  /// DELETE request
+  // DELETE request
   Future<Response<T>> delete<T>(
     String path, {
     dynamic data,
@@ -153,7 +152,7 @@ class RestClient {
     }
   }
 
-  /// PATCH request
+  // PATCH request
   Future<Response<T>> patch<T>(
     String path, {
     dynamic data,
@@ -174,7 +173,7 @@ class RestClient {
     }
   }
 
-  /// Download file
+  // Download file
   Future<Response> download(
     String urlPath,
     String savePath, {

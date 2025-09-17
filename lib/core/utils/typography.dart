@@ -36,7 +36,7 @@ class AppTypography {
     fontSize: bodySize,
     fontWeight: regular,
     fontFamily: fontFamily,
-    color: Color(0xFF94A3B8),
+    color: Color(0xFFDADFE5),
     height: 1.5,
   );
   
@@ -69,7 +69,7 @@ class AppTypography {
     fontSize: bodySize,
     fontWeight: regular,
     fontFamily: fontFamily,
-    color: Color(0xFF6B7280),
+    color: Color(0xFF202225),
     height: 1.5,
   );
   

@@ -1,22 +1,19 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:sizer/sizer.dart';
-import 'package:get/get.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
 
-import '../../core/utils/colors.dart';
-import '../../core/utils/spacing.dart';
-import '../../domain/entities/launch_entity.dart';
-import '../providers/launch_provider.dart';
-import '../widgets/common/modern_card.dart';
-import '../widgets/common/network_error_widget.dart';
-import '../widgets/common/glass_background.dart';
+import '../../core/network/graphql_client.dart';
+import '../../core/utils/typography.dart';
+import '../../data/models/launch_model.dart';
+import '../../data/models/launchpad_model.dart';
+import '../../data/models/landpad_model.dart';
+import '../../data/queries/launches_query.dart';
 import '../widgets/common/custom_app_bar.dart';
+import '../widgets/common/glass_background.dart';
+import '../widgets/common/modern_card.dart';
 
-/// Launch Tracker Screen - Task 2.3
-/// 
-/// Displays SpaceX launches with countdown timers and real-time updates.
-/// Features modern glassmorphism UI, tabbed navigation, and immersive launch tracking.
+/// Launch Tracker Screen with Dynamic GraphQL Data
 class LaunchesScreen extends StatefulWidget {
   const LaunchesScreen({super.key});
 
@@ -24,62 +21,133 @@ class LaunchesScreen extends StatefulWidget {
   State<LaunchesScreen> createState() => _LaunchesScreenState();
 }
 
-class _LaunchesScreenState extends State<LaunchesScreen> with TickerProviderStateMixin {
-  late TabController _tabController;
+class _LaunchesScreenState extends State<LaunchesScreen>
+    with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
-  late AnimationController _countdownController;
+  int _selectedTabIndex = 0;
   Timer? _countdownTimer;
+  
+  // Data state
+  List<Launch> _pastLaunches = [];
+  List<Launch> _upcomingLaunches = [];
+  List<LaunchpadModel> _launchpads = [];
+  List<LandpadModel> _landpads = [];
+  
+  bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-
-    // Initialize tab controller with 3 tabs
-    _tabController = TabController(length: 3, vsync: this);
-
-    // Initialize countdown animation controller
-    _countdownController = AnimationController(
-      duration: const Duration(seconds: 1),
-      vsync: this,
-    )..repeat();
-
-    // Start real-time countdown timer
+    _loadData();
     _startCountdownTimer();
-
-    // Add scroll listener for pagination
-    _scrollController.addListener(_onScroll);
-
-    // Fetch launches when screen loads
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<LaunchProvider>().fetchLaunches();
-    });
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
-    _scrollController.dispose();
-    _countdownController.dispose();
     _countdownTimer?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
-
-  /// Starts real-time countdown timer
+  
   void _startCountdownTimer() {
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
         setState(() {
-          // Update countdown displays every second
+          // Update countdown logic here
         });
       }
     });
   }
+  
+  /// Loads data from GraphQL API with retry logic
+  Future<void> _loadData({int retryCount = 0}) async {
+    if (!mounted) return;
+    
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
 
-  /// Handles scroll for pagination
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent * 0.8) {
-      context.read<LaunchProvider>().loadMoreLaunches();
+    try {
+      final client = GraphQLService.client;
+      final QueryOptions options = QueryOptions(
+        document: gql(launchesQuery),
+        fetchPolicy: FetchPolicy.cacheAndNetwork,
+        errorPolicy: ErrorPolicy.all,
+      );
+
+      final QueryResult result = await client.query(options);
+      
+      if (result.hasException) {
+        // Check if it's a timeout or network error and retry
+        final exceptionString = result.exception.toString().toLowerCase();
+        if ((exceptionString.contains('timeout') || 
+             exceptionString.contains('network') ||
+             exceptionString.contains('connection')) && 
+            retryCount < 2) {
+          // Wait a bit before retrying
+          await Future.delayed(Duration(seconds: 2 + retryCount));
+          return _loadData(retryCount: retryCount + 1);
+        }
+        throw Exception(result.exception.toString());
+      }
+      
+      if (result.data != null) {
+        final data = result.data!;
+        
+        // Parse upcoming launches
+        if (data['launchesUpcoming'] != null) {
+          _upcomingLaunches = (data['launchesUpcoming'] as List)
+              .map((json) => Launch.fromJson(json))
+              .toList();
+        }
+        
+        // Parse past launches
+        if (data['launchesPast'] != null) {
+          _pastLaunches = (data['launchesPast'] as List)
+              .map((json) => Launch.fromJson(json))
+              .toList();
+        }
+        
+        // Parse launchpads
+        if (data['launchpads'] != null) {
+          _launchpads = (data['launchpads'] as List)
+              .map((json) => LaunchpadModel.fromJson(json))
+              .toList();
+        }
+        
+        // Parse landpads
+        if (data['landpads'] != null) {
+          _landpads = (data['landpads'] as List)
+              .map((json) => LandpadModel.fromJson(json))
+              .toList();
+        }
+        
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      // Check if it's a timeout error and retry automatically
+      final errorString = e.toString().toLowerCase();
+      if ((errorString.contains('timeout') || 
+           errorString.contains('network') ||
+           errorString.contains('connection')) && 
+          retryCount < 2) {
+        // Wait a bit before retrying
+        await Future.delayed(Duration(seconds: 2 + retryCount));
+        return _loadData(retryCount: retryCount + 1);
+      }
+      
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = e.toString();
+        });
+      }
     }
   }
 
@@ -92,157 +160,144 @@ class _LaunchesScreenState extends State<LaunchesScreen> with TickerProviderStat
         child: SafeArea(
           child: Column(
             children: [
-              // Custom App Bar matching settings screen
-              CustomAppBar.launches(
-                onRefresh: () {
-                  context.read<LaunchProvider>().fetchLaunches();
-                  _startCountdownTimer();
-                },
-              ),
+              // Custom App Bar - Explorer
+              CustomAppBar.launches(),
               
               // Content
               Expanded(
                 child: CustomScrollView(
                   controller: _scrollController,
                   slivers: [
-                    // Stats Section
+                    // Tab Bar - Pixel Perfect Design with underline
                     SliverToBoxAdapter(
                       child: Container(
-                        margin: EdgeInsets.all(4.w),
-                        child: Consumer<LaunchProvider>(
-                          builder: (context, provider, child) {
-                            final upcomingLaunches = provider.upcomingLaunches.length;
-                            final pastLaunches = provider.pastLaunches.length;
-                            final successfulLaunches = provider.pastLaunches.where((l) => l.success == true).length;
-                            
-                            return Row(
-                              children: [
-                                Expanded(
-                                  child: _buildStatCard(
-                                    'Upcoming\nLaunches',
-                                    upcomingLaunches.toString(),
-                                    Icons.schedule,
-                                    AppColors.rocketOrange,
+                        margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.w),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _selectedTabIndex = 0),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(vertical: 3.w),
+                                  decoration: BoxDecoration(
+                                    border: _selectedTabIndex == 0
+                                        ? const Border(
+                                            bottom: BorderSide(
+                                              color: Color(0xFF3B82F6),
+                                              width: 3,
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                                  child: Text(
+                                    'Launches',
+                                    textAlign: TextAlign.center,
+                                    style: _selectedTabIndex == 0
+                                        ? AppTypography.getBody(isDark).copyWith(
+                                            fontWeight: AppTypography.medium,
+                                          )
+                                        : AppTypography.getBody(isDark).copyWith(
+                                            color: const Color(0xFF9CA3AF),
+                                          ),
                                   ),
                                 ),
-                                SizedBox(width: 3.w),
-                                Expanded(
-                                  child: _buildStatCard(
-                                    'Past\nLaunches',
-                                    pastLaunches.toString(),
-                                    Icons.history,
-                                    AppColors.spaceBlue,
-                                  ),
-                                ),
-                                SizedBox(width: 3.w),
-                                Expanded(
-                                  child: _buildStatCard(
-                                    'Success\nRate',
-                                    pastLaunches > 0
-                                      ? '${((successfulLaunches / pastLaunches) * 100).toInt()}%'
-                                      : '0%',
-                                    Icons.trending_up,
-                                    AppColors.missionGreen,
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-
-                    // Subtitle Section
-                    SliverToBoxAdapter(
-                      child: Container(
-                        margin: EdgeInsets.symmetric(horizontal: AppSpacing.m, vertical: 2.h),
-                        child: Text(
-                          'Real-time SpaceX Launch Monitoring',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white.withValues(alpha:0.8)
-                                : const Color(0xFF4A5568),
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // Tab Bar
-                    SliverToBoxAdapter(
-                      child: Container(
-                        margin: EdgeInsets.all(4.w),
-                        child: ModernCard(
-                          isDark: true,
-                          borderRadius: 20,
-                          child: TabBar(
-                            controller: _tabController,
-                            indicator: BoxDecoration(
-                              borderRadius: BorderRadius.circular(15),
-                              gradient: AppColors.rocketGradient,
+                              ),
                             ),
-                            labelColor: Colors.white,
-                            unselectedLabelColor: Colors.white70,
-                            tabs: [
-                              Tab(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.rocket_launch, size: 4.w),
-                                    SizedBox(width: 1.w),
-                                    Flexible(
-                                      child: Text('Launches', style: TextStyle(fontSize: 3.w)),
-                                    ),
-                                  ],
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _selectedTabIndex = 1),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(vertical: 3.w),
+                                  decoration: BoxDecoration(
+                                    border: _selectedTabIndex == 1
+                                        ? const Border(
+                                            bottom: BorderSide(
+                                              color: Color(0xFF3B82F6),
+                                              width: 3,
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                                  child: Text(
+                                    'Launchpad',
+                                    textAlign: TextAlign.center,
+                                    style: _selectedTabIndex == 1
+                                        ? AppTypography.getBody(isDark).copyWith(
+                                            fontWeight: AppTypography.medium,
+                                          )
+                                        : AppTypography.getBody(isDark).copyWith(
+                                            color: const Color(0xFF9CA3AF),
+                                          ),
+                                  ),
                                 ),
                               ),
-                              Tab(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.rocket, size: 4.w),
-                                    SizedBox(width: 1.w),
-                                    Flexible(
-                                      child: Text('Launchpads', style: TextStyle(fontSize: 3.w)),
-                                    ),
-                                  ],
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _selectedTabIndex = 2),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(vertical: 3.w),
+                                  decoration: BoxDecoration(
+                                    border: _selectedTabIndex == 2
+                                        ? const Border(
+                                            bottom: BorderSide(
+                                              color: Color(0xFF3B82F6),
+                                              width: 3,
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                                  child: Text(
+                                    'Landpad',
+                                    textAlign: TextAlign.center,
+                                    style: _selectedTabIndex == 2
+                                        ? AppTypography.getBody(isDark).copyWith(
+                                            fontWeight: AppTypography.medium,
+                                          )
+                                        : AppTypography.getBody(isDark).copyWith(
+                                            color: const Color(0xFF9CA3AF),
+                                          ),
+                                  ),
                                 ),
                               ),
-                              Tab(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.landscape, size: 4.w),
-                                    SizedBox(width: 1.w),
-                                    Flexible(
-                                      child: Text('Landpads', style: TextStyle(fontSize: 3.w)),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
 
                     // Tab content
-                    SliverFillRemaining(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _buildLaunchesTab(),
-                          _buildLaunchpadsTab(),
-                          _buildLandpadsTab(),
-                        ],
+                    if (_isLoading)
+                      SliverFillRemaining(
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Theme.of(context).primaryColor,
+                                ),
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                'Loading SpaceX data...',
+                                style: AppTypography.getBody(isDark),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      SliverFillRemaining(
+                        child: IndexedStack(
+                          index: _selectedTabIndex,
+                          children: [
+                            _buildLaunchesTab(),
+                            _buildLaunchpadsTab(),
+                            _buildLandpadsTab(),
+                          ],
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -254,219 +309,206 @@ class _LaunchesScreenState extends State<LaunchesScreen> with TickerProviderStat
   }
 
 
-  /// Builds individual stat cards
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
-    return Container(
-      padding: EdgeInsets.all(3.w),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha:0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withValues(alpha:0.3),
-          width: 1,
-        ),
-      ),
+  /// Builds the launches tab content with dynamic data
+  Widget _buildLaunchesTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final allLaunches = [..._upcomingLaunches, ..._pastLaunches];
+    
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(4.w),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 5.w),
-          SizedBox(height: 1.w),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 4.w,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
+          // Stats Section with dynamic data
+          Container(
+            margin: EdgeInsets.only(bottom: 4.w),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ModernCard(
+                    isDark: isDark,
+                    margin: EdgeInsets.only(right: 2.w),
+                    padding: EdgeInsets.all(4.w),
+                    child: Column(
+                      children: [
+                        Text(
+                          'UPCOMING',
+                          style: AppTypography.getCaption(isDark),
+                        ),
+                        SizedBox(height: 2.w),
+                        Text(
+                          '${_upcomingLaunches.length}',
+                          style: AppTypography.getHeadline(isDark),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: ModernCard(
+                    isDark: isDark,
+                    margin: EdgeInsets.symmetric(horizontal: 1.w),
+                    padding: EdgeInsets.all(4.w),
+                    child: Column(
+                      children: [
+                        Text(
+                          'PAST',
+                          style: AppTypography.getCaption(isDark),
+                        ),
+                        SizedBox(height: 2.w),
+                        Text(
+                          '${_pastLaunches.length}',
+                          style: AppTypography.getHeadline(isDark),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: ModernCard(
+                    isDark: isDark,
+                    margin: EdgeInsets.only(left: 2.w),
+                    padding: EdgeInsets.all(4.w),
+                    child: Column(
+                      children: [
+                        Text(
+                          'SUCCESS %',
+                          style: AppTypography.getCaption(isDark),
+                        ),
+                        SizedBox(height: 2.w),
+                        Text(
+                          _calculateSuccessRate().toStringAsFixed(1),
+                          style: AppTypography.getHeadline(isDark).copyWith(
+                            color: const Color(0xFF10B981),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 2.5.w,
-              color: Colors.white70,
-            ),
-          ),
+          
+          // Dynamic launch cards
+          ...allLaunches.map((launch) => Padding(
+            padding: EdgeInsets.only(bottom: 4.w),
+            child: _buildDynamicLaunchCard(launch, isDark),
+          )).toList(),
+          // End of dynamic launch cards
         ],
       ),
     );
   }
 
-  /// Builds the launches tab content
-  Widget _buildLaunchesTab() {
-    return Consumer<LaunchProvider>(
-      builder: (context, provider, child) {
-        if (provider.isLoading && provider.launches.isEmpty) {
-          return Container(
-            height: 50.h,
-            child: const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ),
-          );
-        }
-
-        if (provider.error != null && provider.launches.isEmpty) {
-          return NetworkErrorWidget(
-            onRetry: () => provider.fetchLaunches(),
-          );
-        }
-
-        return RefreshIndicator(
-          onRefresh: () => provider.refreshLaunches(),
-          backgroundColor: AppColors.cardSurface,
-          color: AppColors.rocketOrange,
-          child: ListView.builder(
-            controller: _scrollController,
-            padding: EdgeInsets.all(4.w),
-            itemCount: provider.launches.length + (provider.isLoading ? 1 : 0),
-            itemBuilder: (context, index) {
-              if (index >= provider.launches.length) {
-                return Container(
-                  height: 10.h,
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  ),
-                );
-              }
-
-              final launch = provider.launches[index];
-              return _buildLaunchCard(launch);
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  /// Builds launch card with countdown timer
-  Widget _buildLaunchCard(LaunchEntity launch) {
-    final isUpcoming = launch.dateUtc?.isAfter(DateTime.now()) ?? false;
-    final timeUntilLaunch = isUpcoming && launch.dateUtc != null
-        ? launch.dateUtc!.difference(DateTime.now())
-        : null;
-
+  /// Builds dynamic launch card from GraphQL data
+  Widget _buildDynamicLaunchCard(Launch launch, bool isDark) {
+    final isUpcoming = launch.upcoming;
+    final statusColor = isUpcoming 
+        ? const Color(0xFFF59E0B) 
+        : (launch.launchSuccess == true ? const Color(0xFF10B981) : const Color(0xFFEF4444));
+    final status = isUpcoming ? 'Upcoming' : (launch.launchSuccess == true ? 'Success' : 'Failed');
+    
     return ModernCard(
-      isDark: true,
-      onTap: () => _navigateToLaunchDetail(launch),
+      isDark: isDark,
       margin: EdgeInsets.only(bottom: 4.w),
+      padding: EdgeInsets.all(4.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Launch status and countdown
+          // Status and date row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.w),
                 decoration: BoxDecoration(
-                  color: isUpcoming ? AppColors.rocketOrange : AppColors.missionGreen,
-                  borderRadius: BorderRadius.circular(8),
+                  color: statusColor,
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  isUpcoming ? 'UPCOMING' : 'COMPLETED',
+                  status,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 2.5.w,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              if (isUpcoming && timeUntilLaunch != null)
-                _buildCountdownTimer(timeUntilLaunch),
+              Text(
+                _formatDate(launch.launchDateUtc),
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: const Color(0xFF9CA3AF),
+                ),
+              ),
             ],
           ),
           SizedBox(height: 3.w),
 
-          // Launch name and mission
-          Text(
-            launch.missionName ?? 'Unknown Mission',
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
+          // Mission name and icon
+          Row(
+            children: [
+              Container(
+                width: 10.w,
+                height: 10.w,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1F2937),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.rocket_launch,
+                  color: const Color(0xFF3B82F6),
+                  size: 5.w,
+                ),
+              ),
+              SizedBox(width: 3.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      launch.missionName,
+                      style: AppTypography.getBody(isDark).copyWith(
+                        fontWeight: AppTypography.medium,
+                      ),
+                    ),
+                    Text(
+                      'Rocket: ${launch.rocket.rocketName}',
+                      style: AppTypography.getCaption(isDark),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          SizedBox(height: 2.w),
+          SizedBox(height: 3.w),
 
           // Launch details
           Row(
             children: [
-              Icon(
-                Icons.calendar_today,
-                size: 12.sp,
-                color: Colors.white70,
-              ),
-              SizedBox(width: 2.w),
-              Text(
-                launch.dateUtc != null
-                    ? '${launch.dateUtc!.day}/${launch.dateUtc!.month}/${launch.dateUtc!.year}'
-                    : 'Date TBD',
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: Colors.white70,
-                ),
-              ),
-              SizedBox(width: 4.w),
-              Icon(
-                Icons.rocket,
-                size: 12.sp,
-                color: Colors.white70,
-              ),
-              SizedBox(width: 2.w),
               Expanded(
-                child: Text(
-                  launch.rocket?.name ?? 'Unknown Rocket',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: Colors.white70,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _formatDate(launch.launchDateUtc),
+                      style: AppTypography.getBody(isDark).copyWith(
+                        fontWeight: AppTypography.medium,
+                      ),
+                    ),
+                    Text(
+                      'Year: ${launch.launchYear}',
+                      style: AppTypography.getCaption(isDark),
+                    ),
+                    if (launch.details != null)
+                      Text(
+                        launch.details!,
+                        style: AppTypography.getCaption(isDark),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 3.w),
-
-          // Success indicator
-          Row(
-            children: [
-              Icon(
-                launch.success == true
-                    ? Icons.check_circle
-                    : launch.success == false
-                    ? Icons.cancel
-                    : Icons.help_outline,
-                color: launch.success == true
-                    ? AppColors.missionGreen
-                    : launch.success == false
-                    ? AppColors.launchRed
-                    : Colors.white70,
-                size: 4.w,
-              ),
-              SizedBox(width: 2.w),
-              Text(
-                launch.success == true
-                    ? 'Success'
-                    : launch.success == false
-                    ? 'Failed'
-                    : 'Pending',
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: launch.success == true
-                      ? AppColors.missionGreen
-                      : launch.success == false
-                      ? AppColors.launchRed
-                      : Colors.white70,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 4.w,
-                color: Colors.white70,
               ),
             ],
           ),
@@ -475,123 +517,189 @@ class _LaunchesScreenState extends State<LaunchesScreen> with TickerProviderStat
     );
   }
 
-  /// Builds countdown timer widget
-  Widget _buildCountdownTimer(Duration timeLeft) {
-    final days = timeLeft.inDays;
-    final hours = timeLeft.inHours % 24;
-    final minutes = timeLeft.inMinutes % 60;
-    final seconds = timeLeft.inSeconds % 60;
+  /// Formats date string for display
+  String _formatDate(String? dateString) {
+    if (dateString == null) return 'TBD';
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (e) {
+      return 'TBD';
+    }
+  }
 
-    return AnimatedBuilder(
-      animation: _countdownController,
-      builder: (context, child) {
-        return Container(
-          padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.w),
-          decoration: BoxDecoration(
-            gradient: AppColors.rocketGradient,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+  /// Calculates success rate from past launches
+  double _calculateSuccessRate() {
+    if (_pastLaunches.isEmpty) return 0.0;
+    
+    final successfulLaunches = _pastLaunches.where((launch) => launch.launchSuccess == true).length;
+    return (successfulLaunches / _pastLaunches.length) * 100;
+  }
+
+  /// Builds launchpads tab content
+  Widget _buildLaunchpadsTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(4.w),
+      child: Column(
+        children: [
+          ..._launchpads.map((launchpad) => Padding(
+            padding: EdgeInsets.only(bottom: 4.w),
+            child: _buildDynamicLaunchpadCard(launchpad, isDark),
+          )).toList(),
+        ],
+      ),
+    );
+  }
+
+  /// Builds landpads tab content
+  Widget _buildLandpadsTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(4.w),
+      child: Column(
+        children: [
+          ..._landpads.map((landpad) => Padding(
+            padding: EdgeInsets.only(bottom: 4.w),
+            child: _buildDynamicLandpadCard(landpad, isDark),
+          )).toList(),
+        ],
+      ),
+    );
+  }
+
+  /// Builds dynamic launchpad card from GraphQL data
+  Widget _buildDynamicLaunchpadCard(LaunchpadModel launchpad, bool isDark) {
+    final statusColor = launchpad.status == 'active' 
+        ? const Color(0xFF10B981) 
+        : const Color(0xFFF59E0B);
+    final status = launchpad.status == 'active' ? 'Active' : 'Inactive';
+    
+    return ModernCard(
+      isDark: isDark,
+      margin: EdgeInsets.only(bottom: 4.w),
+      padding: EdgeInsets.all(4.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Status row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(Icons.timer, color: Colors.white, size: 3.w),
-              SizedBox(width: 1.w),
-              Text(
-                '${days}d ${hours}h ${minutes}m ${seconds}s',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 2.5.w,
-                  fontWeight: FontWeight.w600,
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.w),
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  status,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
           ),
-        );
-      },
-    );
-  }
+          SizedBox(height: 3.w),
 
-  /// Builds launchpads tab (placeholder)
-  Widget _buildLaunchpadsTab() {
-    return Container(
-      padding: EdgeInsets.all(4.w),
-      child: ModernCard(
-        isDark: true,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.launch,
-              size: 15.w,
-              color: AppColors.rocketOrange,
+          // Name and location
+          Text(
+            launchpad.name,
+            style: AppTypography.getBody(isDark).copyWith(
+              fontWeight: AppTypography.medium,
             ),
-            SizedBox(height: 4.w),
+          ),
+          if (launchpad.location != null)
             Text(
-              'Launchpads',
-              style: TextStyle(
-                fontSize: 6.w,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
+              '${launchpad.location!.name}, ${launchpad.location!.region}',
+              style: AppTypography.getCaption(isDark),
             ),
-            SizedBox(height: 2.w),
+          SizedBox(height: 2.w),
+
+          // Details
+          if (launchpad.details != null)
             Text(
-              'Coming Soon!',
-              style: TextStyle(
-                fontSize: 4.w,
-                color: Colors.white70,
-              ),
+              launchpad.details!,
+              style: AppTypography.getCaption(isDark),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  /// Builds landpads tab (placeholder)
-  Widget _buildLandpadsTab() {
-    return Container(
+  /// Builds dynamic landpad card from GraphQL data
+  Widget _buildDynamicLandpadCard(LandpadModel landpad, bool isDark) {
+    final statusColor = landpad.status == 'active' 
+        ? const Color(0xFF10B981) 
+        : const Color(0xFFF59E0B);
+    final status = landpad.status == 'active' ? 'Active' : 'Inactive';
+    
+    return ModernCard(
+      isDark: isDark,
+      margin: EdgeInsets.only(bottom: 4.w),
       padding: EdgeInsets.all(4.w),
-      child: ModernCard(
-        isDark: true,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.flight_land,
-              size: 15.w,
-              color: AppColors.missionGreen,
-            ),
-            SizedBox(height: 4.w),
-            Text(
-              'Landing Pads',
-              style: TextStyle(
-                fontSize: 6.w,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Status row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.w),
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  status,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-            ),
-            SizedBox(height: 2.w),
-            Text(
-              'Coming Soon!',
-              style: TextStyle(
-                fontSize: 4.w,
-                color: Colors.white70,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+            ],
+          ),
+          SizedBox(height: 3.w),
 
-  /// Navigates to launch detail screen
-  void _navigateToLaunchDetail(LaunchEntity launch) {
-    Get.snackbar(
-      'Launch Selected',
-      launch.missionName ?? 'Unknown Mission',
-      backgroundColor: AppColors.spaceBlue.withValues(alpha:0.8),
-      colorText: Colors.white,
+          // Name and type
+          Text(
+            landpad.fullName,
+            style: AppTypography.getBody(isDark).copyWith(
+              fontWeight: AppTypography.medium,
+            ),
+          ),
+          if (landpad.landingType != null)
+            Text(
+              'Type: ${landpad.landingType}',
+              style: AppTypography.getCaption(isDark),
+            ),
+          if (landpad.location != null)
+            Text(
+              '${landpad.location!.name}, ${landpad.location!.region}',
+              style: AppTypography.getCaption(isDark),
+            ),
+          SizedBox(height: 2.w),
+
+          // Details
+          if (landpad.details != null)
+            Text(
+              landpad.details!,
+              style: AppTypography.getCaption(isDark),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+        ],
+      ),
     );
   }
 }
