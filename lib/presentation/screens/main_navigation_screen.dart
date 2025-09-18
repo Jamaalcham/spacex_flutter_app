@@ -211,7 +211,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   /// Creates decoration for active navigation item
   BoxDecoration _buildActiveDecoration() {
     return BoxDecoration(
-      gradient: AppColors.spaceGradient,
+      color: AppColors.primary,
       borderRadius: BorderRadius.circular(8),
     );
   }

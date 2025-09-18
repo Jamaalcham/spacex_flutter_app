@@ -34,8 +34,8 @@ class SearchRocketsUseCase extends BaseUseCase<List<RocketEntity>, SearchRockets
       // Business logic: Sort search results by relevance
       // First by exact name matches, then by partial matches
       rockets.sort((a, b) {
-        final aName = (a.name ?? '').toLowerCase();
-        final bName = (b.name ?? '').toLowerCase();
+        final aName = (a.name).toLowerCase();
+        final bName = (b.name).toLowerCase();
         final search = searchTerm.toLowerCase();
         
         // Exact matches first

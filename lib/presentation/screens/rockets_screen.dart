@@ -68,6 +68,11 @@ class _RocketsScreenState extends State<RocketsScreen> {
     setState(() {}); // Refresh to hide clear button
   }
 
+  // Handles pull-to-refresh
+  Future<void> _onRefresh() async {
+    await context.read<RocketProvider>().refreshRockets();
+  }
+
   // Handles filter selection
   void _onFilterChanged(RocketFilter filter) {
     context.read<RocketProvider>().filterRockets(filter);
@@ -125,8 +130,11 @@ class _RocketsScreenState extends State<RocketsScreen> {
               
               // Content
               Expanded(
-                child: CustomScrollView(
-                  controller: _scrollController,
+                child: RefreshIndicator(
+                  onRefresh: _onRefresh,
+                  color: AppColors.spaceBlue,
+                  child: CustomScrollView(
+                    controller: _scrollController,
                   slivers: [
               // Search bar if enabled
               if (_showSearch)
@@ -275,11 +283,14 @@ class _RocketsScreenState extends State<RocketsScreen> {
                 },
               ),
             ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-      ]
-          ),
-    )));
+      ),
+    );
   }
 
 

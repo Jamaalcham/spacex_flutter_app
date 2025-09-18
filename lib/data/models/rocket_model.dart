@@ -1,13 +1,11 @@
 import 'dart:convert';
 
-/// Data model representing physical dimensions
-/// 
-/// Used for rocket height, diameter, and other measurements
+// Data model representing physical dimensions
 class Dimensions {
-  /// Measurement in meters
+  // Measurement in meters
   final double? meters;
   
-  /// Measurement in feet
+  // Measurement in feet
   final double? feet;
 
   const Dimensions({
@@ -30,14 +28,14 @@ class Dimensions {
   }
 }
 
-/// Data model representing mass measurements
-/// 
-/// Used for rocket mass in different units
+// Data model representing mass measurements
+//
+// Used for rocket mass in different units
 class Mass {
-  /// Mass in kilograms
+  // Mass in kilograms
   final int? kg;
   
-  /// Mass in pounds
+  // Mass in pounds
   final int? lb;
 
   const Mass({
@@ -61,54 +59,54 @@ class Mass {
 }
 
 
-/// Data model representing a SpaceX rocket
-/// 
-/// This comprehensive model contains all rocket specifications,
-/// performance data, and operational information.
-/// 
-/// Example usage:
-/// ```dart
-/// final rocket = Rocket.fromJson(jsonData);
-/// print('${rocket.name} - Success Rate: ${rocket.successRatePct}%');
-/// ```
+// Data model representing a SpaceX rocket
+//
+// This comprehensive model contains all rocket specifications,
+// performance data, and operational information.
+//
+// Example usage:
+// ```dart
+// final rocket = Rocket.fromJson(jsonData);
+// print('${rocket.name} - Success Rate: ${rocket.successRatePct}%');
+// ```
 class Rocket {
-  /// Unique identifier for the rocket
+  // Unique identifier for the rocket
   final String id;
   
-  /// Display name of the rocket
+  // Display name of the rocket
   final String name;
   
-  /// Type/classification of the rocket
+  // Type/classification of the rocket
   final String type;
   
-  /// Whether the rocket is currently active
+  // Whether the rocket is currently active
   final bool active;
   
-  /// Cost per launch in USD
+  // Cost per launch in USD
   final int? costPerLaunch;
   
-  /// Success rate percentage
+  // Success rate percentage
   final int? successRatePct;
   
-  /// Date of first flight
+  // Date of first flight
   final String? firstFlight;
   
-  /// Country of origin
+  // Country of origin
   final String country;
   
-  /// Company that built the rocket
+  // Company that built the rocket
   final String company;
   
-  /// Physical height of the rocket
+  // Physical height of the rocket
   final Dimensions? height;
   
-  /// Physical diameter of the rocket
+  // Physical diameter of the rocket
   final Dimensions? diameter;
   
-  /// Mass of the rocket
+  // Mass of the rocket
   final Mass? mass;
   
-  /// Detailed description of the rocket
+  // Detailed description of the rocket
   final String? description;
 
   const Rocket({
@@ -127,9 +125,9 @@ class Rocket {
     this.description,
   });
 
-  /// Creates a Rocket instance from JSON data
-  /// 
-  /// Handles complex nested objects and provides safe defaults
+  // Creates a Rocket instance from JSON data
+  //
+  // Handles complex nested objects and provides safe defaults
   factory Rocket.fromJson(Map<String, dynamic> json) {
     return Rocket(
       id: json['id']?.toString() ?? '',
@@ -148,7 +146,7 @@ class Rocket {
     );
   }
 
-  /// Converts Rocket instance to JSON format
+  // Converts Rocket instance to JSON format
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -167,13 +165,13 @@ class Rocket {
     };
   }
 
-  /// Creates a Rocket instance from JSON string
+  // Creates a Rocket instance from JSON string
   factory Rocket.fromRawJson(String str) => Rocket.fromJson(json.decode(str));
 
-  /// Converts Rocket instance to JSON string
+  // Converts Rocket instance to JSON string
   String toRawJson() => json.encode(toJson());
 
-  /// Creates a copy of this Rocket with optionally updated fields
+  // Creates a copy of this Rocket with optionally updated fields
   Rocket copyWith({
     String? id,
     String? name,
@@ -206,34 +204,34 @@ class Rocket {
     );
   }
 
-  /// Returns formatted cost per launch string
+  // Returns formatted cost per launch string
   String get formattedCost {
     if (costPerLaunch == null) return 'N/A';
     return '\$${(costPerLaunch! / 1000000).toStringAsFixed(1)}M';
   }
 
-  /// Returns formatted success rate string
+  // Returns formatted success rate string
   String get formattedSuccessRate {
     if (successRatePct == null) return 'N/A';
     return '$successRatePct%';
   }
 
-  /// Returns formatted height string (meters)
+  // Returns formatted height string (meters)
   String get formattedHeight {
     if (height?.meters == null) return 'N/A';
     return '${height!.meters!.toStringAsFixed(1)}m';
   }
 
-  /// Returns formatted mass string (kg)
+  // Returns formatted mass string (kg)
   String get formattedMass {
     if (mass?.kg == null) return 'N/A';
     return '${(mass!.kg! / 1000).toStringAsFixed(1)}t';
   }
 
-  /// Returns true if rocket has images available
+  // Returns true if rocket has images available
   bool get hasImages => false; // No image data in current schema
 
-  /// Returns status color based on active state and success rate
+  // Returns status color based on active state and success rate
   String get statusColor {
     if (!active) return 'inactive';
     if (successRatePct != null && successRatePct! >= 90) return 'excellent';

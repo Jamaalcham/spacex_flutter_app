@@ -10,7 +10,7 @@ import '../models/landpad_model.dart';
 import '../queries/launches_query.dart';
 import '../../core/utils/exceptions.dart' as app_exceptions;
 
-/// Implementation of LaunchRepository using GraphQL for the combined launches query
+// Implementation of LaunchRepository using GraphQL for the combined launches query
 class LaunchesRepositoryImpl implements LaunchRepository {
   final GraphQLClient _client;
 

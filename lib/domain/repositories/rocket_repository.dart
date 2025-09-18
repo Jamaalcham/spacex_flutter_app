@@ -1,10 +1,6 @@
 import '../entities/rocket_entity.dart';
 
 /// Abstract repository interface for rocket data operations
-/// 
-/// This interface defines the contract for rocket data access,
-/// allowing for different implementations while maintaining
-/// consistent business logic in the domain layer.
 abstract class RocketRepository {
   /// Fetches all available rockets
   /// 

@@ -71,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final isDark = themeProvider.isDarkMode;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -113,11 +114,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
           
           // Main content with rocket background
-          SafeArea(
+          Padding(
+            padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + kToolbarHeight),
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Column(
                 children: [
+                  // Add additional top spacing
+                  SizedBox(height: 2.h),
+                
                 // Top section with rocket background and content
                 Container(
                   width: 90.w,
@@ -136,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.black.withOpacity(0.7) : Colors.transparent,
+                      color: isDark ? Colors.black.withOpacity(0.7) : Colors.black.withOpacity(0.4),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Padding(
@@ -151,6 +156,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             style: AppTypography.getHeadline(isDark).copyWith(
                               fontWeight: AppTypography.bold,
                               letterSpacing: 0.5,
+                              color: AppColors.textPrimary,
+                              shadows: [
+                                Shadow(
+                                  offset: const Offset(0, 2),
+                                  blurRadius: 4,
+                                  color: Colors.black.withOpacity(0.5),
+                                ),
+                              ],
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -162,7 +175,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             'Next Launch: Falcon 9 - Starlink Mission',
                             style: AppTypography.getBody(isDark).copyWith(
                               fontWeight: AppTypography.medium,
-                              color: isDark ? Colors.white : Colors.black87,
+                              color: AppColors.textPrimary,
+                              shadows: [
+                                Shadow(
+                                  offset: const Offset(0, 1),
+                                  blurRadius: 3,
+                                  color: Colors.black.withOpacity(0.5),
+                                ),
+                              ],
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -188,16 +208,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ),
                 
-                // Mission Overview Section
-                SizedBox(height: 4.h),
-                _buildMissionOverviewSection(isDark),
+                  // Mission Overview Section
+                  SizedBox(height: 4.h),
+                  _buildMissionOverviewSection(isDark),
                 
-                // Launch Success Rate Section
-                SizedBox(height: 4.h),
-                _buildLaunchSuccessRateSection(isDark),
-                
-                // Bottom padding
-                SizedBox(height: 4.h),
+                  // Launch Success Rate Section
+                  SizedBox(height: 4.h),
+                  _buildLaunchSuccessRateSection(isDark),
+                  
+                  // Bottom padding
+                  SizedBox(height: 4.h),
                 ],
               ),
             ),
@@ -288,10 +308,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             width: double.infinity,
             padding: EdgeInsets.all(6.w),
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.8),
+              color: isDark ? AppColors.glassBackground : AppColors.glassBackgroundLight,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
+                color: isDark ? AppColors.glassBorder : AppColors.lightBorder,
                 width: 0.5,
               ),
             ),
@@ -322,7 +342,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Container(
                   height: 1.h,
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.1),
+                    color: isDark ? AppColors.glassBorder : AppColors.lightBorder,
                     borderRadius: BorderRadius.circular(0.5.h),
                   ),
                   child: FractionallySizedBox(
@@ -356,10 +376,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       height: 15.h, // Fixed height for consistent card sizes
       padding: EdgeInsets.all(6.w),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.8),
+        color: isDark ? AppColors.glassBackground : AppColors.glassBackgroundLight,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
+          color: isDark ? AppColors.glassBorder : AppColors.lightBorder,
           width: 0.5,
         ),
       ),

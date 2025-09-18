@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
 import 'package:get/get.dart';
-
 import '../../core/utils/colors.dart';
 import '../../core/utils/spacing.dart';
 import '../../core/utils/typography.dart';
@@ -12,7 +10,6 @@ import '../widgets/common/glass_background.dart';
 import '../widgets/common/custom_app_bar.dart';
 
 // Capsule Detail Screen
-// Displays comprehensive information about a specific capsule including
 class CapsuleDetailScreen extends StatefulWidget {
   final CapsuleEntity capsule;
 
@@ -70,7 +67,7 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
           'Error',
           'Failed to load launch details',
           backgroundColor: AppColors.errorRed,
-          colorText: Colors.white,
+          colorText: AppColors.textPrimary,
         );
       }
     }
@@ -85,37 +82,42 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // Custom App Bar
-              _buildAppBar(isDark),
-              
-              // Content
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: AppSpacing.paddingHorizontalM,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppSpacing.gapVerticalM,
-                      
-                      // Capsule Header
-                      _buildCapsuleHeader(isDark),
-                      AppSpacing.gapVerticalL,
-                      
-                      // Statistics Section
-                      _buildStatisticsSection(isDark),
-                      AppSpacing.gapVerticalL,
-                      
-                      // Status & Details Section
-                      _buildStatusSection(isDark),
-                      AppSpacing.gapVerticalL,
-                      
-                      // Launches Section
-                      _buildLaunchesSection(isDark),
-                      AppSpacing.gapVerticalXL,
-                    ],
+              CustomAppBar(
+                title: widget.capsule.serial ?? 'Capsule Details',
+                showBackButton: true,
+                onBackPressed: () => Get.back(),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.share),
+                    onPressed: _shareCapsule,
                   ),
-                ),
+                ],
               ),
+              Expanded(child: SingleChildScrollView(
+                padding: AppSpacing.paddingHorizontalM,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppSpacing.gapVerticalM,
+
+                    // Capsule Header
+                    _buildCapsuleHeader(isDark),
+                    AppSpacing.gapVerticalL,
+
+                    // Statistics Section
+                    _buildStatisticsSection(isDark),
+                    AppSpacing.gapVerticalL,
+
+                    // Status & Details Section
+                    _buildStatusSection(isDark),
+                    AppSpacing.gapVerticalL,
+
+                    // Launches Section
+                    _buildLaunchesSection(isDark),
+                    AppSpacing.gapVerticalXL,
+                  ],
+                ),
+              )),
             ],
           ),
         ),
@@ -123,85 +125,12 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
     );
   }
 
-  /// Builds custom app bar
-  Widget _buildAppBar(bool isDark) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.w),
-      child: Row(
-        children: [
-          // Back button
-          InkWell(
-            onTap: () => Get.back(),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: EdgeInsets.all(3.w),
-              decoration: BoxDecoration(
-                color: isDark 
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.white.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.2)
-                      : Colors.white.withValues(alpha: 0.8),
-                ),
-              ),
-              child: Icon(
-                Icons.arrow_back_ios_new,
-                color: isDark ? Colors.white : Colors.black87,
-                size: 20.sp,
-              ),
-            ),
-          ),
-          
-          SizedBox(width: 4.w),
-          
-          // Title
-          Expanded(
-            child: Text(
-              'Capsule ${widget.capsule.serial}',
-              style: AppTypography.getTitle(isDark),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          
-          // Share button
-          InkWell(
-            onTap: () => _shareCapsule(),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: EdgeInsets.all(3.w),
-              decoration: BoxDecoration(
-                color: isDark 
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.white.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.2)
-                      : Colors.white.withValues(alpha: 0.8),
-                ),
-              ),
-              child: Icon(
-                Icons.share,
-                color: isDark ? Colors.white : Colors.black87,
-                size: 20.sp,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Shares capsule information
   void _shareCapsule() {
     Get.snackbar(
       'Share',
-      'Capsule ${widget.capsule.serial} details shared!',
+      'Capsule details shared!',
       backgroundColor: AppColors.spaceBlue,
-      colorText: Colors.white,
+      colorText: AppColors.textPrimary,
       duration: const Duration(seconds: 2),
     );
   }
@@ -211,10 +140,10 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
     return Container(
       padding: AppSpacing.paddingL,
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.8),
+        color: isDark ? AppColors.glassBackground : AppColors.glassBackgroundLight,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
+          color: isDark ? AppColors.glassBorder : AppColors.lightBorder,
           width: 0.5,
         ),
       ),
@@ -258,7 +187,7 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
                   widget.capsule.status?.toUpperCase() ?? 'UNKNOWN',
                   style: AppTypography.getCaption(isDark).copyWith(
                     fontWeight: AppTypography.medium,
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -276,8 +205,8 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
       children: [
         Text(
           'STATISTICS',
-          style: AppTypography.getCaption(isDark).copyWith(
-            fontWeight: AppTypography.medium,
+          style: AppTypography.getTitle(isDark).copyWith(
+            fontWeight: AppTypography.bold,
             letterSpacing: 0.5,
           ),
         ),
@@ -334,10 +263,10 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
     return Container(
       padding: AppSpacing.paddingM,
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(12),
+        color: isDark ? AppColors.glassBackground : AppColors.glassBackgroundLight,
+        borderRadius: BorderRadius.circular(AppSpacing.s),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
+          color: isDark ? AppColors.glassBorder : AppColors.lightBorder,
           width: 0.5,
         ),
       ),
@@ -348,14 +277,14 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
             children: [
               Icon(
                 icon,
-                size: 5.w,
+                size: 24,
                 color: AppColors.spaceBlue,
               ),
               AppSpacing.gapHorizontalXS,
               Expanded(
                 child: Text(
                   title,
-                  style: AppTypography.getCaption(isDark).copyWith(
+                  style: AppTypography.getBody(isDark).copyWith(
                     fontWeight: AppTypography.medium,
                   ),
                 ),
@@ -381,8 +310,8 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
       children: [
         Text(
           'DETAILS',
-          style: AppTypography.getCaption(isDark).copyWith(
-            fontWeight: AppTypography.medium,
+          style: AppTypography.getTitle(isDark).copyWith(
+            fontWeight: AppTypography.bold,
             letterSpacing: 0.5,
           ),
         ),
@@ -391,10 +320,10 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
           width: double.infinity,
           padding: AppSpacing.paddingM,
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.8),
-            borderRadius: BorderRadius.circular(12),
+            color: isDark ? AppColors.glassBackground : AppColors.glassBackgroundLight,
+            borderRadius: BorderRadius.circular(AppSpacing.s),
             border: Border.all(
-              color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
+              color: isDark ? AppColors.glassBorder : AppColors.lightBorder,
               width: 0.5,
             ),
           ),
@@ -404,7 +333,7 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
               if (widget.capsule.lastUpdate != null) ...[
                 Text(
                   'Last Update',
-                  style: AppTypography.getCaption(isDark).copyWith(
+                  style: AppTypography.getBody(isDark).copyWith(
                     fontWeight: AppTypography.medium,
                   ),
                 ),
@@ -435,8 +364,8 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
       children: [
         Text(
           'ASSOCIATED LAUNCHES',
-          style: AppTypography.getCaption(isDark).copyWith(
-            fontWeight: AppTypography.medium,
+          style: AppTypography.getTitle(isDark).copyWith(
+            fontWeight: AppTypography.bold,
             letterSpacing: 0.5,
           ),
         ),
@@ -446,10 +375,10 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
           Container(
             padding: AppSpacing.paddingL,
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.8),
-              borderRadius: BorderRadius.circular(12),
+              color: isDark ? AppColors.glassBackground : AppColors.glassBackgroundLight,
+              borderRadius: BorderRadius.circular(AppSpacing.s),
               border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
+                color: isDark ? AppColors.glassBorder : AppColors.lightBorder,
                 width: 0.5,
               ),
             ),
@@ -462,10 +391,10 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
             width: double.infinity,
             padding: AppSpacing.paddingL,
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.8),
-              borderRadius: BorderRadius.circular(12),
+              color: isDark ? AppColors.glassBackground : AppColors.glassBackgroundLight,
+              borderRadius: BorderRadius.circular(AppSpacing.s),
               border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
+                color: isDark ? AppColors.glassBorder : AppColors.lightBorder,
                 width: 0.5,
               ),
             ),
@@ -489,10 +418,10 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
       margin: EdgeInsets.only(bottom: AppSpacing.s),
       padding: AppSpacing.paddingM,
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(12),
+        color: isDark ? AppColors.glassBackground : AppColors.glassBackgroundLight,
+        borderRadius: BorderRadius.circular(AppSpacing.s),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
+          color: isDark ? AppColors.glassBorder : AppColors.lightBorder,
           width: 0.5,
         ),
       ),
@@ -505,15 +434,15 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
               Expanded(
                 child: Text(
                   launch.missionName ?? 'Unknown Mission',
-                  style: AppTypography.getBody(isDark).copyWith(
+                  style: AppTypography.getTitle(isDark).copyWith(
                     fontWeight: AppTypography.medium,
                   ),
                 ),
               ),
               Container(
-                padding: EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.xs,
-                  vertical: 2,
+                  vertical: AppSpacing.xs / 2,
                 ),
                 decoration: BoxDecoration(
                   color: launch.success == true 
@@ -521,7 +450,7 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
                       : launch.success == false 
                           ? AppColors.errorRed 
                           : AppColors.textSecondary,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(AppSpacing.xs),
                 ),
                 child: Text(
                   launch.success == true 
@@ -531,8 +460,7 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
                           : 'UNKNOWN',
                   style: AppTypography.getCaption(isDark).copyWith(
                     fontWeight: AppTypography.medium,
-                    color: Colors.white,
-                    fontSize: 10.sp,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -543,7 +471,7 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
             AppSpacing.gapVerticalXS,
             Text(
               'Launch Date: ${_formatDate(launch.dateUtc.toString())}',
-              style: AppTypography.getCaption(isDark),
+              style: AppTypography.getBody(isDark),
             ),
           ],
           
@@ -551,7 +479,7 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
             AppSpacing.gapVerticalXS,
             Text(
               launch.details!,
-              style: AppTypography.getCaption(isDark),
+              style: AppTypography.getBody(isDark),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),

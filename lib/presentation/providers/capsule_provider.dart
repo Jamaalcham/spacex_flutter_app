@@ -4,14 +4,13 @@ import '../../domain/entities/capsule_entity.dart';
 import '../../domain/repositories/capsule_repository.dart';
 import '../../data/repositories/capsule_repository_impl.dart';
 import '../../core/utils/exceptions.dart';
-import '../../core/network/api_service.dart';
 import '../../core/network/network_exceptions.dart' as network;
 
-/// Provider for managing capsule-related state and operations
-/// 
-/// This provider handles all capsule data operations including fetching,
-/// searching, filtering, and pagination. It provides reactive state
-/// management for capsule-related UI components.
+// Provider for managing capsule-related state and operations
+//
+// This provider handles all capsule data operations including fetching,
+// searching, filtering, and pagination. It provides reactive state
+// management for capsule-related UI components.
 class CapsuleProvider extends ChangeNotifier {
   final CapsuleRepository _repository;
 
@@ -52,7 +51,7 @@ class CapsuleProvider extends ChangeNotifier {
   bool get isEmpty => capsules.isEmpty && !_isLoading;
   int get capsuleCount => capsules.length;
 
-  /// Fetches initial capsules data
+  // Fetches initial capsules data
   Future<void> fetchCapsules() async {
     if (_isLoading) return;
 
@@ -63,24 +62,15 @@ class CapsuleProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final queryData = {
-        "query": {},
-        "options": {
-          "limit": _pageSize,
-          "page": _currentPage,
-          "sort": {"serial": "asc"}
-        }
-      };
+      final offset = (_currentPage - 1) * _pageSize;
+      _capsules = await _repository.getCapsulesWithPagination(
+        limit: _pageSize,
+        offset: offset,
+      );
       
-      final response = await ApiService.instance.queryCapsules(query: queryData);
-      
-      _capsules = (response['docs'] as List)
-          .map((json) => CapsuleEntity.fromJson(json))
-          .toList();
-      
-      _totalDocs = response['totalDocs'] ?? 0;
-      _totalPages = response['totalPages'] ?? 0;
-      _hasMoreData = response['hasNextPage'] ?? false;
+      // Estimate pagination info (since repository doesn't return this)
+      _totalDocs = _capsules.length;
+      _hasMoreData = _capsules.length == _pageSize; // Has more if we got a full page
       
       _applyFilters();
     } catch (e) {
@@ -92,7 +82,7 @@ class CapsuleProvider extends ChangeNotifier {
     }
   }
 
-  /// Loads more capsules for pagination
+  // Loads more capsules for pagination
   Future<void> loadMoreCapsules() async {
     if (_isLoadingMore || !_hasMoreData || _searchQuery.isNotEmpty) return;
 
@@ -101,24 +91,17 @@ class CapsuleProvider extends ChangeNotifier {
 
     try {
       final nextPage = _currentPage + 1;
-      final queryData = {
-        "query": {},
-        "options": {
-          "limit": _pageSize,
-          "page": nextPage,
-          "sort": {"serial": "asc"}
-        }
-      };
+      final offset = (nextPage - 1) * _pageSize;
       
-      final response = await ApiService.instance.queryCapsules(query: queryData);
-      final moreCapsules = (response['docs'] as List)
-          .map((json) => CapsuleEntity.fromJson(json))
-          .toList();
+      final moreCapsules = await _repository.getCapsulesWithPagination(
+        limit: _pageSize,
+        offset: offset,
+      );
 
       if (moreCapsules.isNotEmpty) {
         _capsules.addAll(moreCapsules);
         _currentPage = nextPage;
-        _hasMoreData = response['hasNextPage'] ?? false;
+        _hasMoreData = moreCapsules.length == _pageSize; // Has more if we got a full page
         _applyFilters();
       } else {
         _hasMoreData = false;
@@ -131,7 +114,7 @@ class CapsuleProvider extends ChangeNotifier {
     }
   }
 
-  /// Searches capsules by serial or type
+  // Searches capsules by serial or type
   Future<void> searchCapsules(String query) async {
     _searchQuery = query.trim();
     
@@ -146,22 +129,7 @@ class CapsuleProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final queryData = {
-        "query": {
-          "\$text": {
-            "\$search": _searchQuery
-          }
-        },
-        "options": {
-          "limit": 50,
-          "sort": {"serial": "asc"}
-        }
-      };
-      
-      final response = await ApiService.instance.queryCapsules(query: queryData);
-      _filteredCapsules = (response['docs'] as List)
-          .map((json) => CapsuleEntity.fromJson(json))
-          .toList();
+      _filteredCapsules = await _repository.searchCapsules(_searchQuery);
     } catch (e) {
       _error = _getErrorMessage(e);
       _filteredCapsules = [];
@@ -171,14 +139,14 @@ class CapsuleProvider extends ChangeNotifier {
     }
   }
 
-  /// Filters capsules by status
+  // Filters capsules by status
   void filterByStatus(List<String> statuses) {
     _selectedStatuses = statuses;
     _applyFilters();
     notifyListeners();
   }
 
-  /// Applies current filters to capsules list
+  // Applies current filters to capsules list
   void _applyFilters() {
     if (_searchQuery.isNotEmpty) {
       // Search results are already filtered
@@ -195,7 +163,7 @@ class CapsuleProvider extends ChangeNotifier {
     }).toList();
   }
 
-  /// Clears all filters and search
+  // Clears all filters and search
   void clearFilters() {
     _searchQuery = '';
     _selectedStatuses = [];
@@ -203,7 +171,7 @@ class CapsuleProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Refreshes capsules data
+  // Refreshes capsules data
   Future<void> refreshCapsules() async {
     _currentPage = 1;
     _hasMoreData = true;
@@ -213,13 +181,13 @@ class CapsuleProvider extends ChangeNotifier {
     await fetchCapsules();
   }
 
-  /// Toggles between grid and list view
+  // Toggles between grid and list view
   void toggleViewMode() {
     _isGridView = !_isGridView;
     notifyListeners();
   }
 
-  /// Gets a specific capsule by ID
+  // Gets a specific capsule by ID
   Future<CapsuleEntity?> getCapsuleById(String id) async {
     try {
       // First check if capsule is already in memory
@@ -238,7 +206,7 @@ class CapsuleProvider extends ChangeNotifier {
     }
   }
 
-  /// Gets all unique statuses from current capsules
+  // Gets all unique statuses from current capsules
   List<String> getAllStatuses() {
     final statuses = <String>{};
     for (final capsule in _capsules) {
@@ -249,13 +217,13 @@ class CapsuleProvider extends ChangeNotifier {
     return statuses.toList()..sort();
   }
 
-  /// Clears current error
+  // Clears current error
   void clearError() {
     _error = null;
     notifyListeners();
   }
 
-  /// Converts exception to user-friendly error message
+  // Converts exception to user-friendly error message
   String _getErrorMessage(dynamic error) {
     if (error is network.NetworkException) {
       return error.message;

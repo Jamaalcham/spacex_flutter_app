@@ -16,11 +16,7 @@ import '../widgets/common/glass_background.dart';
 import '../widgets/common/custom_app_bar.dart';
 import '../widgets/loading/capsule_shimmer.dart';
 
-/// Capsule Explorer Screen - Task 2.1
-/// 
-/// Displays SpaceX capsules in both list and grid view formats with
-/// search, filter, and pagination capabilities. Implements pull-to-refresh
-/// and provides detailed capsule information.
+/// Capsules Screen with REST API Integration capabilities./// and provides detailed capsule information.
 class CapsulesScreen extends StatefulWidget {
   const CapsulesScreen({super.key});
 
@@ -148,7 +144,7 @@ class _CapsulesScreenState extends State<CapsulesScreen> {
     }
   }
 
-  /// Handles search submission when user presses search key
+ // when user presses search key
   void _onSearchSubmitted(String query) {
     if (query.trim().isNotEmpty) {
       context.read<CapsuleProvider>().searchCapsules(query.trim());
@@ -653,6 +649,10 @@ class _CapsulesScreenState extends State<CapsulesScreen> {
 
   /// Navigates to capsule detail screen
   void _navigateToCapsuleDetail(CapsuleEntity capsule) {
-    Get.to(() => CapsuleDetailScreen(capsule: capsule));
+    Get.to(
+      () => CapsuleDetailScreen(capsule: capsule),
+      transition: Transition.rightToLeft,
+      duration: const Duration(milliseconds: 300),
+    );
   }
 }

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
+import '../../../core/utils/typography.dart';
 
 // Reusable Custom App Bar Widget
 // Supports different configurations for various screen types.
-class CustomAppBar extends StatelessWidget {
+class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final List<Widget>? actions;
   final bool centerTitle;
@@ -13,6 +14,8 @@ class CustomAppBar extends StatelessWidget {
   final VoidCallback? onViewToggle;
   final bool? isGridView;
   final bool showSearch;
+  final bool showBackButton;
+  final VoidCallback? onBackPressed;
 
   const CustomAppBar({
     super.key,
@@ -25,6 +28,8 @@ class CustomAppBar extends StatelessWidget {
     this.onViewToggle,
     this.isGridView,
     this.showSearch = false,
+    this.showBackButton = false,
+    this.onBackPressed,
   });
 
   /// Factory constructor for Settings screen
@@ -83,25 +88,29 @@ class CustomAppBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: centerTitle ? MainAxisAlignment.center : MainAxisAlignment.start,
         children: [
+          // Back button
+          if (showBackButton) ...[
+            IconButton(
+              onPressed: onBackPressed ?? () => Navigator.of(context).pop(),
+              icon: Icon(
+                Icons.arrow_back_ios_new,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+            SizedBox(width: 2.w),
+          ],
+          
           // Title
           if (!centerTitle) ...[
             Text(
               title,
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : Colors.black87,
-              ),
+              style: AppTypography.getHeadline(isDark),
             ),
             const Spacer(),
           ] else ...[
             Text(
               title,
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : Colors.black87,
-              ),
+              style: AppTypography.getHeadline(isDark),
             ),
           ],
           
@@ -172,4 +181,7 @@ class CustomAppBar extends StatelessWidget {
     
     return buttons;
   }
+
+  @override
+  Size get preferredSize => Size.fromHeight(8.h);
 }

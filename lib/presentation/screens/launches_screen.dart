@@ -180,6 +180,10 @@ class _LaunchesScreenState extends State<LaunchesScreen>
             padding: AppSpacing.paddingHorizontalM,
             child: Column(
               children: [
+                // Filter Buttons
+                _buildFilterButtons(launchProvider, isDark),
+                AppSpacing.gapVerticalM,
+                
                 // Statistics Cards
                 _buildStatisticsCards(launchProvider, isDark),
                 AppSpacing.gapVerticalL,
@@ -320,6 +324,96 @@ class _LaunchesScreenState extends State<LaunchesScreen>
           ),
         );
       },
+    );
+  }
+
+  /// Builds filter buttons for launches tab
+  Widget _buildFilterButtons(LaunchProvider launchProvider, bool isDark) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildFilterButton(
+            'All',
+            launchProvider.launches.length.toString(),
+            true, // Always show as selected for now since we're showing all launches
+            isDark,
+            () {
+              // TODO: Implement filter logic for all launches
+            },
+          ),
+        ),
+        SizedBox(width: 2.w),
+        Expanded(
+          child: _buildFilterButton(
+            'Upcoming',
+            launchProvider.upcomingLaunches.length.toString(),
+            false,
+            isDark,
+            () {
+              // TODO: Implement filter logic for upcoming launches
+            },
+          ),
+        ),
+        SizedBox(width: 2.w),
+        Expanded(
+          child: _buildFilterButton(
+            'Past',
+            launchProvider.pastLaunches.length.toString(),
+            false,
+            isDark,
+            () {
+              // TODO: Implement filter logic for past launches
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Builds individual filter button
+  Widget _buildFilterButton(
+    String label,
+    String count,
+    bool isSelected,
+    bool isDark,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 2.w),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.spaceBlue.withValues(alpha: 0.2)
+              : (isDark ? AppColors.cardSurface : AppColors.lightCard),
+          borderRadius: BorderRadius.circular(AppSpacing.s),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.spaceBlue
+                : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
+            width: isSelected ? 2.0 : 1.0,
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              count,
+              style: AppTypography.getTitle(isDark).copyWith(
+                color: isSelected ? AppColors.spaceBlue : null,
+                fontWeight: AppTypography.bold,
+              ),
+            ),
+            SizedBox(height: 0.5.h),
+            Text(
+              label,
+              style: AppTypography.getCaption(isDark).copyWith(
+                color: isSelected ? AppColors.spaceBlue : null,
+                fontWeight: AppTypography.medium,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

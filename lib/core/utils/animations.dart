@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Animation utilities and constants for the SpaceX app
-/// 
-/// This class provides consistent animation durations, curves, and utilities
-/// throughout the application for a cohesive user experience.
+// Animation utilities and constants for the SpaceX app
+
 class AppAnimations {
   // Animation Durations
   static const Duration ultraFast = Duration(milliseconds: 150);
@@ -29,7 +27,7 @@ class AppAnimations {
   static const Duration staggerDelay = Duration(milliseconds: 100);
   static const Duration microStagger = Duration(milliseconds: 50);
   
-  /// Creates a slide transition from bottom
+  // Creates a slide transition from bottom
   static Widget slideFromBottom({
     required Widget child,
     required Animation<double> animation,
@@ -47,7 +45,7 @@ class AppAnimations {
     );
   }
   
-  /// Creates a slide transition from right
+  // Creates a slide transition from right
   static Widget slideFromRight({
     required Widget child,
     required Animation<double> animation,
@@ -65,7 +63,7 @@ class AppAnimations {
     );
   }
   
-  /// Creates a fade and scale transition
+  // Creates a fade and scale transition
   static Widget fadeAndScale({
     required Widget child,
     required Animation<double> animation,
@@ -86,7 +84,7 @@ class AppAnimations {
     );
   }
   
-  /// Creates a staggered list animation
+  // Creates a staggered list animation
   static Widget staggeredListItem({
     required Widget child,
     required int index,
@@ -115,7 +113,7 @@ class AppAnimations {
     );
   }
   
-  /// Creates a rocket launch animation (scale + slide)
+  // Creates a rocket launch animation (scale + slide)
   static Widget rocketLaunchAnimation({
     required Widget child,
     required Animation<double> animation,
@@ -141,7 +139,7 @@ class AppAnimations {
     );
   }
   
-  /// Creates a floating animation for space elements
+  // Creates a floating animation for space elements
   static Widget floatingAnimation({
     required Widget child,
     required AnimationController controller,
@@ -167,7 +165,7 @@ class AppAnimations {
   }
 }
 
-/// Custom page route with smooth transitions
+// Custom page route with smooth transitions
 class SpacePageRoute<T> extends PageRouteBuilder<T> {
   final Widget child;
   final Duration duration;
@@ -179,12 +177,11 @@ class SpacePageRoute<T> extends PageRouteBuilder<T> {
     this.duration = AppAnimations.medium,
     this.curve = AppAnimations.fastOutSlowIn,
     this.transitionType = PageTransitionType.slideFromRight,
-    RouteSettings? settings,
+    super.settings,
   }) : super(
     pageBuilder: (context, animation, secondaryAnimation) => child,
     transitionDuration: duration,
     reverseTransitionDuration: duration,
-    settings: settings,
   );
   
   @override
@@ -219,7 +216,7 @@ class SpacePageRoute<T> extends PageRouteBuilder<T> {
   }
 }
 
-/// Page transition types
+// Page transition types
 enum PageTransitionType {
   slideFromRight,
   slideFromBottom,
@@ -227,7 +224,7 @@ enum PageTransitionType {
   rocketLaunch,
 }
 
-/// Animated button with micro-interactions
+// Animated button with micro-interactions
 class AnimatedSpaceButton extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;

@@ -6,19 +6,48 @@ import '../../domain/repositories/launchpad_repository.dart';
 import '../models/launchpad_model.dart';
 import '../queries/launches_query.dart';
 import '../../core/utils/exceptions.dart' as app_exceptions;
+import '../../core/cache/launchpad_cache_manager.dart';
+import '../../core/network/connectivity_manager.dart';
 
-/// Implementation of LaunchpadRepository using GraphQL
+// Implementation of LaunchpadRepository using GraphQL with offline caching
 class LaunchpadRepositoryImpl implements LaunchpadRepository {
   final GraphQLClient _client;
+  final LaunchpadCacheManager _cacheManager;
+  final ConnectivityManager _connectivityManager;
 
-  LaunchpadRepositoryImpl({GraphQLClient? client})
-      : _client = client ?? GraphQLService.client;
+  LaunchpadRepositoryImpl({
+    GraphQLClient? client,
+    LaunchpadCacheManager? cacheManager,
+    ConnectivityManager? connectivityManager,
+  }) : _client = client ?? GraphQLService.client,
+       _cacheManager = cacheManager ?? LaunchpadCacheManager(),
+       _connectivityManager = connectivityManager ?? ConnectivityManager();
 
   @override
   Future<List<LaunchpadEntity>> getLaunchpads({
     int limit = 20,
     int offset = 0,
   }) async {
+    // Check if we have internet connectivity
+    final hasConnection = await _connectivityManager.checkConnectivity();
+    
+    // Try to get cached data first if offline
+    if (!hasConnection) {
+      final cachedLaunchpads = await _cacheManager.getCachedLaunchpads();
+      if (cachedLaunchpads != null) {
+        // Apply pagination to cached data
+        final endIndex = (offset + limit).clamp(0, cachedLaunchpads.length);
+        final startIndex = offset.clamp(0, cachedLaunchpads.length);
+        
+        if (startIndex >= cachedLaunchpads.length) {
+          return [];
+        }
+        
+        return cachedLaunchpads.sublist(startIndex, endIndex);
+      }
+      throw app_exceptions.NetworkException('No internet connection and no cached data available');
+    }
+
     try {
       final result = await _client.query(QueryOptions(
         document: gql(launchpadsQuery),
@@ -26,15 +55,39 @@ class LaunchpadRepositoryImpl implements LaunchpadRepository {
           'limit': limit,
           'offset': offset,
         },
-        fetchPolicy: FetchPolicy.cacheAndNetwork,
+        fetchPolicy: FetchPolicy.networkOnly, // Always fetch fresh data
         errorPolicy: ErrorPolicy.all,
       ));
 
       if (result.hasException) {
+        // Try to return cached data as fallback
+        final cachedLaunchpads = await _cacheManager.getCachedLaunchpads();
+        if (cachedLaunchpads != null) {
+          final endIndex = (offset + limit).clamp(0, cachedLaunchpads.length);
+          final startIndex = offset.clamp(0, cachedLaunchpads.length);
+          
+          if (startIndex >= cachedLaunchpads.length) {
+            return [];
+          }
+          
+          return cachedLaunchpads.sublist(startIndex, endIndex);
+        }
         throw _handleGraphQLException(result.exception!);
       }
 
       if (result.data == null || result.data!['launchpads'] == null) {
+        // Try to return cached data as fallback
+        final cachedLaunchpads = await _cacheManager.getCachedLaunchpads();
+        if (cachedLaunchpads != null) {
+          final endIndex = (offset + limit).clamp(0, cachedLaunchpads.length);
+          final startIndex = offset.clamp(0, cachedLaunchpads.length);
+          
+          if (startIndex >= cachedLaunchpads.length) {
+            return [];
+          }
+          
+          return cachedLaunchpads.sublist(startIndex, endIndex);
+        }
         return [];
       }
 
@@ -43,8 +96,27 @@ class LaunchpadRepositoryImpl implements LaunchpadRepository {
           .map((json) => LaunchpadModel.fromJson(json))
           .toList();
 
+      // Cache the launchpads data for offline use (only for first page)
+      if (offset == 0 && launchpads.isNotEmpty) {
+        final launchpadsJsonForCache = launchpads.map((launchpad) => _mapToJson(launchpad)).toList();
+        await _cacheManager.cacheLaunchpadsJson(launchpadsJsonForCache);
+      }
+
       return launchpads;
     } catch (e) {
+      // Try to return cached data as fallback
+      final cachedLaunchpads = await _cacheManager.getCachedLaunchpads();
+      if (cachedLaunchpads != null) {
+        final endIndex = (offset + limit).clamp(0, cachedLaunchpads.length);
+        final startIndex = offset.clamp(0, cachedLaunchpads.length);
+        
+        if (startIndex >= cachedLaunchpads.length) {
+          return [];
+        }
+        
+        return cachedLaunchpads.sublist(startIndex, endIndex);
+      }
+      
       if (e is app_exceptions.AppException) rethrow;
       throw app_exceptions.ServerException('Failed to fetch launchpads: ${e.toString()}');
     }
@@ -108,5 +180,20 @@ class LaunchpadRepositoryImpl implements LaunchpadRepository {
     }
 
     return app_exceptions.ServerException('Unknown error occurred');
+  }
+
+  /// Maps LaunchpadEntity to JSON for caching
+  Map<String, dynamic> _mapToJson(LaunchpadEntity launchpad) {
+    return {
+      'id': launchpad.id,
+      'name': launchpad.name,
+      'details': launchpad.details,
+      'status': launchpad.status,
+      'successful_launches': launchpad.successfulLaunches,
+      'location': launchpad.location != null ? {
+        'name': launchpad.location!.name,
+        'region': launchpad.location!.region,
+      } : null,
+    };
   }
 }

@@ -1,21 +1,40 @@
 import 'package:dio/dio.dart';
 import '../../core/network/rest_client.dart';
+import '../../core/cache/rocket_cache_manager.dart';
+import '../../core/network/connectivity_manager.dart';
 import '../../domain/entities/rocket_entity.dart';
 import '../../domain/repositories/rocket_repository.dart';
 import '../../core/network/network_exceptions.dart';
 
-/// Implementation of RocketRepository using REST API
-///
-/// This class handles all rocket-related data operations using the SpaceX REST API.
-/// It includes comprehensive error handling and data transformation.
+// Implementation of RocketRepository using REST API with offline caching
+// This class handles all rocket-related data operations using the SpaceX REST API.
 class RocketRepositoryImpl implements RocketRepository {
   final RestClient _client;
+  final RocketCacheManager _cacheManager;
+  final ConnectivityManager _connectivityManager;
 
-  RocketRepositoryImpl({RestClient? client})
-      : _client = client ?? RestClient.instance;
+  RocketRepositoryImpl({
+    RestClient? client,
+    RocketCacheManager? cacheManager,
+    ConnectivityManager? connectivityManager,
+  }) : _client = client ?? RestClient.instance,
+       _cacheManager = cacheManager ?? RocketCacheManager(),
+       _connectivityManager = connectivityManager ?? ConnectivityManager();
 
   @override
   Future<List<RocketEntity>> getAllRockets() async {
+    // Check if we have internet connectivity
+    final hasConnection = await _connectivityManager.checkConnectivity();
+    
+    // Try to get cached data first if offline or as fallback
+    if (!hasConnection) {
+      final cachedRockets = await _cacheManager.getCachedRockets();
+      if (cachedRockets != null) {
+        return cachedRockets;
+      }
+      throw const NetworkException(message: 'No internet connection and no cached data available');
+    }
+
     try {
       final response = await _client.post(
         '/rockets/query',
@@ -30,33 +49,84 @@ class RocketRepositoryImpl implements RocketRepository {
       );
 
       if (response.data == null || response.data['docs'] == null) {
+        // Try to return cached data as fallback
+        final cachedRockets = await _cacheManager.getCachedRockets();
+        if (cachedRockets != null) {
+          return cachedRockets;
+        }
         throw const NetworkException(message: 'No rocket data received from server');
       }
 
       final List<dynamic> rocketsJson = response.data['docs'];
+      
+      // Cache the raw JSON data for offline use
+      await _cacheManager.cacheRocketsJson(
+        rocketsJson.cast<Map<String, dynamic>>()
+      );
+      
       return rocketsJson
           .map((json) => RocketEntity.fromJson(json))
           .toList();
     } on DioException catch (e) {
+      // Try to return cached data as fallback
+      final cachedRockets = await _cacheManager.getCachedRockets();
+      if (cachedRockets != null) {
+        return cachedRockets;
+      }
       throw _handleDioException(e);
     } catch (e) {
+      // Try to return cached data as fallback
+      final cachedRockets = await _cacheManager.getCachedRockets();
+      if (cachedRockets != null) {
+        return cachedRockets;
+      }
       throw NetworkException(message: 'Failed to fetch rockets: ${e.toString()}');
     }
   }
 
   @override
   Future<RocketEntity> getRocketById(String id) async {
+    // Check if we have internet connectivity
+    final hasConnection = await _connectivityManager.checkConnectivity();
+    
+    // Try to get cached data first if offline
+    if (!hasConnection) {
+      final cachedRocket = await _cacheManager.getCachedRocketById(id);
+      if (cachedRocket != null) {
+        return cachedRocket;
+      }
+      throw const NetworkException(message: 'No internet connection and no cached data available');
+    }
+
     try {
       final response = await _client.get('/rockets/$id');
 
       if (response.data == null) {
+        // Try to return cached data as fallback
+        final cachedRocket = await _cacheManager.getCachedRocketById(id);
+        if (cachedRocket != null) {
+          return cachedRocket;
+        }
         throw const NetworkException(message: 'Rocket not found');
       }
 
+      // Cache the rocket data for offline use
+      await _cacheManager.cacheRocketById(id, response.data);
+
       return RocketEntity.fromJson(response.data);
     } on DioException catch (e) {
+      // Try to return cached data as fallback
+      final cachedRocket = await _cacheManager.getCachedRocketById(id);
+      if (cachedRocket != null) {
+        return cachedRocket;
+      }
       throw _handleDioException(e);
     } catch (e) {
+      // Try to return cached data as fallback
+      final cachedRocket = await _cacheManager.getCachedRocketById(id);
+      if (cachedRocket != null) {
+        return cachedRocket;
+      }
       throw NetworkException(message: 'Failed to fetch rocket: ${e.toString()}');
     }
   }

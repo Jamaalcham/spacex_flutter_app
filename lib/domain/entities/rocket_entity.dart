@@ -1,4 +1,4 @@
-/// Domain entity representing physical dimensions
+// Domain entity representing physical dimensions
 class DimensionsEntity {
   final double? meters;
   final double? feet;
@@ -13,7 +13,7 @@ class DimensionsEntity {
   }
 }
 
-/// Domain entity representing mass measurements
+// Domain entity representing mass measurements
 class MassEntity {
   final int? kg;
   final int? lb;
@@ -23,12 +23,12 @@ class MassEntity {
   factory MassEntity.fromJson(Map<String, dynamic> json) {
     return MassEntity(
       kg: json['kg'],
-      lb: json['lb'],
+      lb: json['lb'] ?? 0,
     );
   }
 }
 
-/// Domain entity representing thrust measurements
+// Domain entity representing thrust measurements
 class ThrustEntity {
   final int? kN;
   final int? lbf;
@@ -43,7 +43,7 @@ class ThrustEntity {
   }
 }
 
-/// Domain entity representing rocket stage information
+// Domain entity representing rocket stage information
 class StageEntity {
   final ThrustEntity? thrustSeaLevel;
   final ThrustEntity? thrustVacuum;
@@ -82,7 +82,7 @@ class StageEntity {
   }
 }
 
-/// Domain entity representing engine specifications
+// Domain entity representing engine specifications
 class EngineEntity {
   final Map<String, int>? isp;
   final ThrustEntity? thrustSeaLevel;
@@ -131,7 +131,7 @@ class EngineEntity {
   }
 }
 
-/// Domain entity representing payload weight capacity
+// Domain entity representing payload weight capacity
 class PayloadWeightEntity {
   final String id;
   final String name;
@@ -155,10 +155,8 @@ class PayloadWeightEntity {
   }
 }
 
-/// Domain entity representing a SpaceX rocket
-/// 
-/// This entity represents the business logic layer's view of a rocket,
-/// containing essential specifications and operational data.
+// Domain entity representing a SpaceX rocket
+// This entity represents the business logic layer's view of a rocket,
 class RocketEntity {
   final String id;
   final String name;
@@ -250,37 +248,30 @@ class RocketEntity {
     );
   }
 
-  /// Returns formatted cost per launch string
   String get formattedCost {
     if (costPerLaunch == null) return 'N/A';
     return '\$${(costPerLaunch! / 1000000).toStringAsFixed(1)}M';
   }
 
-  /// Returns formatted success rate string
   String get formattedSuccessRate {
     if (successRatePct == null) return 'N/A';
     return '$successRatePct%';
   }
 
-  /// Returns formatted height string (meters)
   String get formattedHeight {
     if (height?.meters == null) return 'N/A';
     return '${height!.meters!.toStringAsFixed(1)}m';
   }
 
-  /// Returns formatted mass string (kg)
   String get formattedMass {
     if (mass?.kg == null) return 'N/A';
     return '${(mass!.kg! / 1000).toStringAsFixed(1)}t';
   }
 
-  /// Returns true if rocket has images available
   bool get hasImages => flickrImages.isNotEmpty;
   
-  /// Returns primary image URL
   String? get primaryImage => flickrImages.isNotEmpty ? flickrImages.first : null;
   
-  /// Returns rocket subtitle based on type and stages
   String get subtitle {
     if (type.toLowerCase().contains('rocket')) {
       return stages > 1 ? '$stages-Stage Rocket' : 'Single-Stage Rocket';
@@ -288,7 +279,6 @@ class RocketEntity {
     return type;
   }
   
-  /// Returns rocket category for display
   String get category {
     switch (name.toLowerCase()) {
       case 'falcon 1':
@@ -304,7 +294,6 @@ class RocketEntity {
     }
   }
 
-  /// Returns status based on active state and success rate
   RocketStatus get status {
     if (!active) return RocketStatus.retired;
     if (successRatePct != null && successRatePct! >= 90) return RocketStatus.excellent;
@@ -327,7 +316,7 @@ class RocketEntity {
   }
 }
 
-/// Enum representing rocket operational status
+// Enum representing rocket operational status
 enum RocketStatus {
   excellent,
   good,

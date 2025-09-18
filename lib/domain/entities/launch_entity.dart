@@ -1,8 +1,4 @@
-/// Domain entity representing a SpaceX launch
-/// 
-/// This entity encapsulates the business logic and rules for launch data,
-/// providing a clean interface for the presentation layer while being
-/// independent of data source implementation details.
+// Domain entity representing a SpaceX launch
 class LaunchEntity {
   final int flightNumber;
   final String missionName;
@@ -25,6 +21,28 @@ class LaunchEntity {
     this.rocket,
     this.launchSite,
   });
+
+  factory LaunchEntity.fromJson(Map<String, dynamic> json) {
+    return LaunchEntity(
+      flightNumber: json['flight_number'] ?? 0,
+      missionName: json['mission_name'] ?? '',
+      dateUtc: json['launch_date_unix'] != null && json['launch_date_unix'] > 0
+          ? DateTime.fromMillisecondsSinceEpoch(json['launch_date_unix'] * 1000)
+          : null,
+      success: json['launch_success'],
+      upcoming: json['upcoming'],
+      details: json['details'],
+      links: json['links'] != null 
+          ? LaunchLinksEntity.fromJson(json['links'])
+          : null,
+      rocket: json['rocket'] != null 
+          ? LaunchRocketEntity.fromJson(json['rocket'])
+          : null,
+      launchSite: json['launch_site'] != null 
+          ? LaunchSiteEntity.fromJson(json['launch_site'])
+          : null,
+    );
+  }
 
   /// Returns formatted launch date
   String get formattedDate {
@@ -119,14 +137,28 @@ class LaunchLinksEntity {
     this.flickrImages,
   });
 
-  /// Checks if there are any Flickr images available
+  /// Creates a LaunchLinksEntity from JSON data
+  factory LaunchLinksEntity.fromJson(Map<String, dynamic> json) {
+    return LaunchLinksEntity(
+      missionPatch: json['mission_patch'],
+      missionPatchSmall: json['mission_patch_small'],
+      article: json['article_link'],
+      wikipedia: json['wikipedia'],
+      videoLink: json['video_link'],
+      flickrImages: json['flickr_images'] != null 
+          ? List<String>.from(json['flickr_images'])
+          : null,
+    );
+  }
+
+  // Checks if there are any Flickr images available
   bool get hasFlickrImages => flickrImages != null && flickrImages!.isNotEmpty;
 
   /// Returns the best available mission patch image
   String? get bestMissionPatch => missionPatch ?? missionPatchSmall;
 }
 
-/// Domain entity for launch rocket information
+// Domain entity for launch rocket information
 class LaunchRocketEntity {
   final String? id;
   final String name;
@@ -143,6 +175,18 @@ class LaunchRocketEntity {
     this.coreReuse,
     this.landingSuccess,
   });
+
+  /// Creates a LaunchRocketEntity from JSON data
+  factory LaunchRocketEntity.fromJson(Map<String, dynamic> json) {
+    return LaunchRocketEntity(
+      id: json['rocket_id'],
+      name: json['rocket_name'] ?? '',
+      type: json['rocket_type'],
+      coreSerial: json['core_serial'],
+      coreReuse: json['core_reuse'],
+      landingSuccess: json['landing_success'],
+    );
+  }
 
   /// Returns reuse information as formatted string
   String get reuseInfo {
@@ -168,6 +212,15 @@ class LaunchSiteEntity {
     required this.name,
     this.nameShort,
   });
+
+  /// Creates a LaunchSiteEntity from JSON data
+  factory LaunchSiteEntity.fromJson(Map<String, dynamic> json) {
+    return LaunchSiteEntity(
+      id: json['site_id'],
+      name: json['site_name'] ?? '',
+      nameShort: json['site_name_short'],
+    );
+  }
 
   /// Returns display name (short name if available, otherwise full name)
   String get displayName => nameShort ?? name;

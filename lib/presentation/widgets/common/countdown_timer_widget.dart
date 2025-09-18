@@ -89,9 +89,16 @@ class _CountdownTimerWidgetState extends State<CountdownTimerWidget> {
           style: TextStyle(
             fontSize: 28.sp,
             fontWeight: FontWeight.w900,
-            color: widget.isDark ? Colors.white : Colors.black87,
+            color: Colors.white,
             fontFamily: 'monospace',
             letterSpacing: -0.5,
+            shadows: [
+              Shadow(
+                offset: const Offset(0, 2),
+                blurRadius: 4,
+                color: Colors.black.withOpacity(0.6),
+              ),
+            ],
           ),
         ),
         SizedBox(height: 0.2.h),
@@ -100,8 +107,15 @@ class _CountdownTimerWidgetState extends State<CountdownTimerWidget> {
           style: TextStyle(
             fontSize: 10.sp,
             fontWeight: FontWeight.w600,
-            color: widget.isDark ? Colors.white.withOpacity(0.8) : Colors.black54,
+            color: Colors.white.withOpacity(0.9),
             letterSpacing: 0.8,
+            shadows: [
+              Shadow(
+                offset: const Offset(0, 1),
+                blurRadius: 3,
+                color: Colors.black.withOpacity(0.6),
+              ),
+            ],
           ),
         ),
       ],
@@ -117,8 +131,15 @@ class _CountdownTimerWidgetState extends State<CountdownTimerWidget> {
         style: TextStyle(
           fontSize: 22.sp,
           fontWeight: FontWeight.w900,
-          color: widget.isDark ? Colors.white : Colors.black87,
+          color: Colors.white,
           fontFamily: 'monospace',
+          shadows: [
+            Shadow(
+              offset: const Offset(0, 2),
+              blurRadius: 4,
+              color: Colors.black.withOpacity(0.6),
+            ),
+          ],
         ),
       ),
     );

@@ -1,43 +1,41 @@
 import 'dart:convert';
 
-/// Data model representing launch links and media
-/// 
-/// Contains URLs for mission patches, articles, videos, and social media
+// Data model representing launch links and media
 class LaunchLinks {
-  /// Mission patch image URL
+  // Mission patch image URL
   final String? missionPatch;
   
-  /// Small mission patch image URL
+  // Small mission patch image URL
   final String? missionPatchSmall;
   
-  /// Reddit campaign URL
+  // Reddit campaign URL
   final String? redditCampaign;
   
-  /// Reddit launch URL
+  // Reddit launch URL
   final String? redditLaunch;
   
-  /// Reddit recovery URL
+  // Reddit recovery URL
   final String? redditRecovery;
   
-  /// Reddit media URL
+  // Reddit media URL
   final String? redditMedia;
   
-  /// Press kit URL
+  // Press kit URL
   final String? presskit;
   
-  /// Article link URL
+  // Article link URL
   final String? articleLink;
   
-  /// Wikipedia URL
+  // Wikipedia URL
   final String? wikipedia;
   
-  /// Video link URL
+  // Video link URL
   final String? videoLink;
   
-  /// YouTube video ID
+  // YouTube video ID
   final String? youtubeId;
   
-  /// List of Flickr image URLs
+  // List of Flickr image URLs
   final List<String> flickrImages;
 
   const LaunchLinks({
@@ -92,17 +90,17 @@ class LaunchLinks {
   }
 }
 
-/// Data model representing launch site information
-/// 
-/// Contains details about the launch location and facility
+// Data model representing launch site information
+//
+// Contains details about the launch location and facility
 class LaunchSite {
-  /// Site ID
+  // Site ID
   final String siteId;
   
-  /// Site name
+  // Site name
   final String siteName;
   
-  /// Full site name
+  // Full site name
   final String siteNameLong;
 
   const LaunchSite({
@@ -128,17 +126,17 @@ class LaunchSite {
   }
 }
 
-/// Data model representing rocket information in launch context
-/// 
-/// Simplified rocket data specific to launch information
+// Data model representing rocket information in launch context
+//
+// Simplified rocket data specific to launch information
 class LaunchRocket {
-  /// Rocket ID
+  // Rocket ID
   final String rocketId;
   
-  /// Rocket name
+  // Rocket name
   final String rocketName;
   
-  /// Rocket type
+  // Rocket type
   final String rocketType;
 
   const LaunchRocket({
@@ -165,75 +163,75 @@ class LaunchRocket {
   }
 }
 
-/// Data model representing a SpaceX launch
-/// 
-/// This comprehensive model contains all launch information including
-/// mission details, rocket data, launch site, success status, and media links.
-/// 
-/// Example usage:
-/// ```dart
-/// final launch = Launch.fromJson(jsonData);
-/// print('${launch.missionName} - ${launch.launchSuccess ? "Success" : "Failed"}');
-/// ```
+// Data model representing a SpaceX launch
+//
+// This comprehensive model contains all launch information including
+// mission details, rocket data, launch site, success status, and media links.
+//
+// Example usage:
+// ```dart
+// final launch = Launch.fromJson(jsonData);
+// print('${launch.missionName} - ${launch.launchSuccess ? "Success" : "Failed"}');
+// ```
 class Launch {
-  /// Flight number (sequential launch number)
+  // Flight number (sequential launch number)
   final int flightNumber;
   
-  /// Mission name
+  // Mission name
   final String missionName;
   
-  /// Mission ID (if applicable)
+  // Mission ID (if applicable)
   final List<String> missionId;
   
-  /// Launch year
+  // Launch year
   final String launchYear;
   
-  /// Launch date (Unix timestamp)
+  // Launch date (Unix timestamp)
   final int launchDateUnix;
   
-  /// Launch date (UTC string)
+  // Launch date (UTC string)
   final String launchDateUtc;
   
-  /// Launch date (local string)
+  // Launch date (local string)
   final String launchDateLocal;
   
-  /// Whether this is a tentative launch date
+  // Whether this is a tentative launch date
   final bool isTentative;
   
-  /// Tentative maximum precision (if applicable)
+  // Tentative maximum precision (if applicable)
   final String? tentativeMaxPrecision;
   
-  /// Whether the launch was successful
+  // Whether the launch was successful
   final bool? launchSuccess;
   
-  /// Launch failure details (if failed)
+  // Launch failure details (if failed)
   final Map<String, dynamic>? launchFailureDetails;
   
-  /// Whether this is an upcoming launch
+  // Whether this is an upcoming launch
   final bool upcoming;
   
-  /// Launch details and description
+  // Launch details and description
   final String? details;
   
-  /// Rocket information
+  // Rocket information
   final LaunchRocket rocket;
   
-  /// Launch site information
+  // Launch site information
   final LaunchSite? launchSite;
   
-  /// Links to media and additional information
+  // Links to media and additional information
   final LaunchLinks links;
   
-  /// Static fire date (UTC)
+  // Static fire date (UTC)
   final String? staticFireDateUtc;
   
-  /// Static fire date (Unix timestamp)
+  // Static fire date (Unix timestamp)
   final int? staticFireDateUnix;
   
-  /// Timeline of launch events
+  // Timeline of launch events
   final Map<String, dynamic>? timeline;
   
-  /// Crew information (for crewed missions)
+  // Crew information (for crewed missions)
   final List<String> crew;
 
   const Launch({
@@ -259,9 +257,9 @@ class Launch {
     required this.crew,
   });
 
-  /// Creates a Launch instance from JSON data
-  /// 
-  /// Handles both REST API and GraphQL response formats
+  // Creates a Launch instance from JSON data
+  //
+  // Handles both REST API and GraphQL response formats
   factory Launch.fromJson(Map<String, dynamic> json) {
     // Handle GraphQL format - check for GraphQL-specific fields
     // Note: launch_year might be null, so we check if the key exists but don't require a value
@@ -331,7 +329,7 @@ class Launch {
   }
 
 
-  /// Converts Launch instance to JSON format
+  // Converts Launch instance to JSON format
   Map<String, dynamic> toJson() {
     return {
       'flight_number': flightNumber,
@@ -357,13 +355,13 @@ class Launch {
     };
   }
 
-  /// Creates a Launch instance from JSON string
+  // Creates a Launch instance from JSON string
   factory Launch.fromRawJson(String str) => Launch.fromJson(json.decode(str));
 
-  /// Converts Launch instance to JSON string
+  // Converts Launch instance to JSON string
   String toRawJson() => json.encode(toJson());
 
-  /// Creates a copy of this Launch with optionally updated fields
+  // Creates a copy of this Launch with optionally updated fields
   Launch copyWith({
     int? flightNumber,
     String? missionName,
@@ -410,48 +408,48 @@ class Launch {
     );
   }
 
-  /// Returns launch status as a readable string
+  // Returns launch status as a readable string
   String get launchStatus {
     if (upcoming) return 'Upcoming';
     if (launchSuccess == null) return 'Unknown';
     return launchSuccess! ? 'Success' : 'Failed';
   }
 
-  /// Returns launch date as DateTime object
+  // Returns launch date as DateTime object
   DateTime get launchDate => DateTime.fromMillisecondsSinceEpoch(launchDateUnix * 1000);
 
-  /// Returns formatted launch date string
+  // Returns formatted launch date string
   String get formattedLaunchDate {
     final date = launchDate;
     return '${date.day}/${date.month}/${date.year}';
   }
 
-  /// Returns formatted launch time string
+  // Returns formatted launch time string
   String get formattedLaunchTime {
     final date = launchDate;
     return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
-  /// Returns true if launch has mission patch
+  // Returns true if launch has mission patch
   bool get hasMissionPatch => links.missionPatch != null || links.missionPatchSmall != null;
 
-  /// Returns true if launch has video content
+  // Returns true if launch has video content
   bool get hasVideo => links.videoLink != null || links.youtubeId != null;
 
-  /// Returns true if launch has images
+  // Returns true if launch has images
   bool get hasImages => links.flickrImages.isNotEmpty;
 
-  /// Returns true if this is a crewed mission
+  // Returns true if this is a crewed mission
   bool get isCrewed => crew.isNotEmpty;
 
-  /// Returns launch outcome color for UI
+  // Returns launch outcome color for UI
   String get outcomeColor {
     if (upcoming) return 'upcoming';
     if (launchSuccess == null) return 'unknown';
     return launchSuccess! ? 'success' : 'failed';
   }
 
-  /// Returns days until launch (negative if past)
+  // Returns days until launch (negative if past)
   int get daysUntilLaunch {
     final now = DateTime.now();
     final launch = launchDate;

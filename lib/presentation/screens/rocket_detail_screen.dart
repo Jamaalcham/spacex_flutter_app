@@ -13,6 +13,7 @@ import '../providers/rocket_provider.dart';
 import '../widgets/common/glass_background.dart';
 import '../widgets/common/modern_card.dart';
 import '../widgets/common/network_error_widget.dart';
+import '../widgets/common/custom_app_bar.dart';
 
 // Rocket Detail Screen
 /// Displays detailed information about a specific rocket including
@@ -96,19 +97,7 @@ class _RocketDetailScreenState extends State<RocketDetailScreen> {
 
     return Scaffold(
       body: GlassBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Custom App Bar
-              _buildAppBar(isDark),
-              
-              // Content
-              Expanded(
-                child: _buildContent(isDark),
-              ),
-            ],
-          ),
-        ),
+        child: _buildContent(isDark),
       ),
     );
   }
@@ -146,85 +135,13 @@ class _RocketDetailScreenState extends State<RocketDetailScreen> {
       }
     });
   }
-
-  /// Builds custom app bar
-  Widget _buildAppBar(bool isDark) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.w),
-      child: Row(
-        children: [
-          // Back button
-          InkWell(
-            onTap: () => Get.back(),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: EdgeInsets.all(3.w),
-              decoration: BoxDecoration(
-                color: isDark 
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.white.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.2)
-                      : Colors.white.withValues(alpha: 0.8),
-                ),
-              ),
-              child: Icon(
-                Icons.arrow_back_ios_new,
-                color: isDark ? Colors.white : Colors.black87,
-                size: 20.sp,
-              ),
-            ),
-          ),
-          
-          SizedBox(width: 4.w),
-          
-          // Title
-          Expanded(
-            child: Text(
-              _rocket?.name ?? 'Rocket Details',
-              style: AppTypography.getTitle(isDark),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          
-          // Share button
-          InkWell(
-            onTap: () => _shareRocket(),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: EdgeInsets.all(3.w),
-              decoration: BoxDecoration(
-                color: isDark 
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.white.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.2)
-                      : Colors.white.withValues(alpha: 0.8),
-                ),
-              ),
-              child: Icon(
-                Icons.share,
-                color: isDark ? Colors.white : Colors.black87,
-                size: 20.sp,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
+ 
   /// Builds main content
   Widget _buildContent(bool isDark) {
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.textPrimary),
         ),
       );
     }
@@ -240,36 +157,53 @@ class _RocketDetailScreenState extends State<RocketDetailScreen> {
         child: Text(
           'No rocket data available',
           style: TextStyle(
-            color: isDark ? Colors.white70 : Colors.black54,
+            color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
             fontSize: 16.sp,
           ),
         ),
       );
     }
 
-    return SingleChildScrollView(
+    return SafeArea(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image Carousel
-          _buildImageCarousel(),
-          
-          // Rocket Information
-          _buildRocketInfo(isDark),
-          
-          // Specifications
-          _buildSpecifications(isDark),
-
-          // Engines Information
-          _buildEnginesInfo(isDark),
-          
-          // Payload Information
-          _buildPayloadInfo(isDark),
-          
-          // Additional Details
-          _buildAdditionalDetails(isDark),
-          
-          SizedBox(height: 4.w),
+          CustomAppBar(
+            title: _rocket?.name ?? 'Rocket Details',
+            showBackButton: true,
+            onBackPressed: () => Get.back(),
+            actions: [
+              IconButton(
+                icon: Icon(Icons.share),
+                onPressed: _shareRocket,
+              ),
+            ],
+          ),
+          Expanded(child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Image Carousel
+                _buildImageCarousel(),
+      
+                // Rocket Information
+                _buildRocketInfo(isDark),
+      
+                // Specifications
+                _buildSpecifications(isDark),
+      
+                // Engines Information
+                _buildEnginesInfo(isDark),
+      
+                // Payload Information
+                _buildPayloadInfo(isDark),
+      
+                // Additional Details
+                _buildAdditionalDetails(isDark),
+      
+                SizedBox(height: 4.w),
+              ],
+            ),
+          ))
         ],
       ),
     );
@@ -301,13 +235,13 @@ class _RocketDetailScreenState extends State<RocketDetailScreen> {
               Icon(
                 Icons.rocket_launch,
                 size: 20.w,
-                color: Colors.white.withValues(alpha: 0.7),
+                color: AppColors.textSecondary,
               ),
               SizedBox(height: 2.w),
               Text(
                 'No Images Available',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: AppColors.textSecondary,
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w500,
                 ),
@@ -350,7 +284,7 @@ class _RocketDetailScreenState extends State<RocketDetailScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
+                      color: AppColors.shadowDark,
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     ),
@@ -368,39 +302,25 @@ class _RocketDetailScreenState extends State<RocketDetailScreen> {
                         fit: BoxFit.cover,
                         width: double.infinity,
                     placeholder: (context, url) => Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            const Color(0xFF1E3A8A),
-                            const Color(0xFF3B82F6),
-                          ],
-                        ),
+                      decoration: const BoxDecoration(
+                        gradient: AppColors.spaceGradient,
                       ),
-                      child: Center(
+                      child: const Center(
                         child: CircularProgressIndicator(
-                          color: Colors.white.withValues(alpha: 0.7),
+                          color: Colors.white70,
                           strokeWidth: 2,
                         ),
                       ),
                     ),
                     errorWidget: (context, url, error) => Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            const Color(0xFF1E3A8A),
-                            const Color(0xFF3B82F6),
-                          ],
-                        ),
+                      decoration: const BoxDecoration(
+                        gradient: AppColors.spaceGradient,
                       ),
                       child: Center(
                         child: Icon(
                           Icons.broken_image,
                           size: 15.w,
-                          color: Colors.white.withValues(alpha: 0.7),
+                          color: Colors.white70,
                         ),
                       ),
                     ),
@@ -427,7 +347,7 @@ class _RocketDetailScreenState extends State<RocketDetailScreen> {
                   borderRadius: BorderRadius.circular(1.w),
                   color: _currentImageIndex == entry.key
                       ? AppColors.spaceBlue
-                      : Colors.white.withValues(alpha: 0.3),
+                      : AppColors.textSecondary,
                 ),
               );
             }).toList(),
@@ -464,7 +384,7 @@ class _RocketDetailScreenState extends State<RocketDetailScreen> {
             child: Text(
               _rocket!.active == true ? 'ACTIVE' : 'RETIRED',
               style: AppTypography.captionLight.copyWith(
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -500,17 +420,17 @@ class _RocketDetailScreenState extends State<RocketDetailScreen> {
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
         color: isDark 
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.white.withValues(alpha: 0.9),
+            ? AppColors.glassBackground
+            : AppColors.glassBackgroundLight,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.white.withValues(alpha: 0.8),
+              ? AppColors.glassBorder
+              : AppColors.glassBorderLight,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: isDark ? AppColors.shadowDark : AppColors.shadowLight,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -550,17 +470,17 @@ class _RocketDetailScreenState extends State<RocketDetailScreen> {
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
         color: isDark 
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.white.withValues(alpha: 0.9),
+            ? AppColors.glassBackground
+            : AppColors.glassBackgroundLight,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.white.withValues(alpha: 0.8),
+              ? AppColors.glassBorder
+              : AppColors.glassBorderLight,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: isDark ? AppColors.shadowDark : AppColors.shadowLight,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -630,17 +550,17 @@ class _RocketDetailScreenState extends State<RocketDetailScreen> {
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
         color: isDark 
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.white.withValues(alpha: 0.9),
+            ? AppColors.glassBackground
+            : AppColors.glassBackgroundLight,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.white.withValues(alpha: 0.8),
+              ? AppColors.glassBorder
+              : AppColors.glassBorderLight,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: isDark ? AppColors.shadowDark : AppColors.shadowLight,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -662,8 +582,8 @@ class _RocketDetailScreenState extends State<RocketDetailScreen> {
             padding: EdgeInsets.all(3.w),
             decoration: BoxDecoration(
               color: isDark 
-                  ? Colors.white.withValues(alpha: 0.05)
-                  : Colors.grey.withValues(alpha: 0.1),
+                  ? AppColors.glassBackground
+                  : AppColors.lightShimmerBase,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -706,17 +626,17 @@ class _RocketDetailScreenState extends State<RocketDetailScreen> {
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
         color: isDark 
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.white.withValues(alpha: 0.9),
+            ? AppColors.glassBackground
+            : AppColors.glassBackgroundLight,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.white.withValues(alpha: 0.8),
+              ? AppColors.glassBorder
+              : AppColors.glassBorderLight,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: isDark ? AppColors.shadowDark : AppColors.shadowLight,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -816,12 +736,12 @@ class _RocketDetailScreenState extends State<RocketDetailScreen> {
         padding: EdgeInsets.symmetric(vertical: 4.w, horizontal: 4.w),
         decoration: BoxDecoration(
           color: isDark 
-              ? Colors.white.withValues(alpha: 0.1)
-              : AppColors.spaceBlue.withValues(alpha: 0.1),
+              ? AppColors.glassBackground
+              : AppColors.infoLight,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isDark
-                ? Colors.white.withValues(alpha: 0.3)
+                ? AppColors.glassBorder
                 : AppColors.spaceBlue.withValues(alpha: 0.3),
           ),
         ),
@@ -830,7 +750,7 @@ class _RocketDetailScreenState extends State<RocketDetailScreen> {
           children: [
             Icon(
               icon,
-              color: isDark ? Colors.white : AppColors.spaceBlue,
+              color: isDark ? AppColors.textPrimary : AppColors.spaceBlue,
               size: 20.sp,
             ),
             SizedBox(width: 3.w),
@@ -838,7 +758,7 @@ class _RocketDetailScreenState extends State<RocketDetailScreen> {
               text,
               style: AppTypography.getBody(isDark).copyWith(
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : AppColors.spaceBlue,
+                color: isDark ? AppColors.textPrimary : AppColors.spaceBlue,
               ),
             ),
           ],
@@ -870,13 +790,12 @@ class _RocketDetailScreenState extends State<RocketDetailScreen> {
     );
   }
 
-  /// Shares rocket information
   void _shareRocket() {
     Get.snackbar(
       'Share',
       'Rocket ${_rocket?.name} details shared!',
       backgroundColor: AppColors.spaceBlue,
-      colorText: Colors.white,
+      colorText: AppColors.textPrimary,
       duration: const Duration(seconds: 2),
     );
   }
@@ -887,7 +806,7 @@ class _RocketDetailScreenState extends State<RocketDetailScreen> {
       'External Link',
       'Opening external links coming soon!',
       backgroundColor: AppColors.spaceBlue.withValues(alpha: 0.8),
-      colorText: Colors.white,
+      colorText: AppColors.textPrimary,
     );
   }
 }
@@ -934,19 +853,25 @@ class _FullscreenImageViewerState extends State<_FullscreenImageViewer> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.darkSpace,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
+          icon: Icon(Icons.close, color: AppColors.textPrimary),
           onPressed: () => Get.back(),
         ),
         title: Text(
           '${_currentIndex + 1} / ${widget.images.length}',
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.textPrimary),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.info_outline, color: AppColors.textPrimary),
+            onPressed: () => _showImageInfo(),
+          ),
+        ],
       ),
       body: PageView.builder(
         controller: _pageController,
@@ -959,20 +884,21 @@ class _FullscreenImageViewerState extends State<_FullscreenImageViewer> {
         itemBuilder: (context, index) {
           return InteractiveViewer(
             minScale: 0.5,
-            maxScale: 5.0,
+            maxScale: 4.0,
+            clipBehavior: Clip.none,
             child: Center(
               child: CachedNetworkImage(
                 imageUrl: widget.images[index],
                 fit: BoxFit.contain,
-                placeholder: (context, url) => const Center(
+                placeholder: (context, url) => Center(
                   child: CircularProgressIndicator(
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                errorWidget: (context, url, error) => const Center(
+                errorWidget: (context, url, error) => Center(
                   child: Icon(
                     Icons.broken_image,
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     size: 64,
                   ),
                 ),
@@ -981,6 +907,18 @@ class _FullscreenImageViewerState extends State<_FullscreenImageViewer> {
           );
         },
       ),
+    );
+  }
+
+  /// Shows image information
+  void _showImageInfo() {
+    Get.snackbar(
+      'Image Gallery',
+      'Pinch to zoom • Double-tap to zoom • Swipe to navigate',
+      backgroundColor: AppColors.darkSpace.withValues(alpha: 0.8),
+      colorText: AppColors.textPrimary,
+      duration: const Duration(seconds: 3),
+      snackPosition: SnackPosition.BOTTOM,
     );
   }
 }

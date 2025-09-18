@@ -6,23 +6,50 @@ import '../../domain/repositories/launch_repository.dart';
 import '../models/launch_model.dart';
 import '../queries/launches_query.dart';
 import '../../core/utils/exceptions.dart' as app_exceptions;
+import '../../core/cache/launch_cache_manager.dart';
+import '../../core/network/connectivity_manager.dart';
 
-/// Implementation of LaunchRepository using GraphQL
-///
-/// This class handles all launch-related data operations using the SpaceX GraphQL API.
-/// It includes comprehensive error handling and data transformation between
-/// data models and domain entities.
+// Implementation of LaunchRepository using GraphQL with offline caching
+
+// data models and domain entities, and offline caching support.
 class LaunchRepositoryImpl implements LaunchRepository {
   final GraphQLClient _client;
+  final LaunchCacheManager _cacheManager;
+  final ConnectivityManager _connectivityManager;
 
-  LaunchRepositoryImpl({GraphQLClient? client})
-      : _client = client ?? GraphQLService.client;
+  LaunchRepositoryImpl({
+    GraphQLClient? client,
+    LaunchCacheManager? cacheManager,
+    ConnectivityManager? connectivityManager,
+  }) : _client = client ?? GraphQLService.client,
+       _cacheManager = cacheManager ?? LaunchCacheManager(),
+       _connectivityManager = connectivityManager ?? ConnectivityManager();
 
   @override
   Future<List<LaunchEntity>> getLaunchesWithPagination({
     int limit = 20,
     int offset = 0,
   }) async {
+    // Check if we have internet connectivity
+    final hasConnection = await _connectivityManager.checkConnectivity();
+    
+    // Try to get cached data first if offline
+    if (!hasConnection) {
+      final cachedLaunches = await _cacheManager.getCachedLaunches();
+      if (cachedLaunches != null) {
+        // Apply pagination to cached data
+        final endIndex = (offset + limit).clamp(0, cachedLaunches.length);
+        final startIndex = offset.clamp(0, cachedLaunches.length);
+        
+        if (startIndex >= cachedLaunches.length) {
+          return [];
+        }
+        
+        return cachedLaunches.sublist(startIndex, endIndex);
+      }
+      throw app_exceptions.NetworkException('No internet connection and no cached data available');
+    }
+
     try {
       // For initial load, get upcoming launches first (they're usually fewer)
       // Then get paginated past launches
@@ -33,7 +60,7 @@ class LaunchRepositoryImpl implements LaunchRepository {
         final upcomingResult = await _client.query(QueryOptions(
           document: gql(upcomingLaunchesQuery),
           variables: {'limit': 10}, // Limit upcoming to 10
-          fetchPolicy: FetchPolicy.cacheAndNetwork,
+          fetchPolicy: FetchPolicy.networkOnly, // Always fetch fresh data
           errorPolicy: ErrorPolicy.all,
         ));
 
@@ -55,11 +82,23 @@ class LaunchRepositoryImpl implements LaunchRepository {
           'limit': limit,
           'offset': offset,
         },
-        fetchPolicy: FetchPolicy.cacheAndNetwork,
+        fetchPolicy: FetchPolicy.networkOnly, // Always fetch fresh data
         errorPolicy: ErrorPolicy.all,
       ));
 
       if (pastResult.hasException) {
+        // Try to return cached data as fallback
+        final cachedLaunches = await _cacheManager.getCachedLaunches();
+        if (cachedLaunches != null) {
+          final endIndex = (offset + limit).clamp(0, cachedLaunches.length);
+          final startIndex = offset.clamp(0, cachedLaunches.length);
+          
+          if (startIndex >= cachedLaunches.length) {
+            return [];
+          }
+          
+          return cachedLaunches.sublist(startIndex, endIndex);
+        }
         throw _handleGraphQLException(pastResult.exception!);
       }
 
@@ -71,8 +110,27 @@ class LaunchRepositoryImpl implements LaunchRepository {
         allLaunches.addAll(pastLaunches.map(_mapToEntity));
       }
       
+      // Cache the launches data for offline use (only for first page)
+      if (offset == 0 && allLaunches.isNotEmpty) {
+        final launchesJson = allLaunches.map((launch) => _mapToJson(launch)).toList();
+        await _cacheManager.cacheLaunchesJson(launchesJson);
+      }
+      
       return allLaunches;
     } catch (e) {
+      // Try to return cached data as fallback
+      final cachedLaunches = await _cacheManager.getCachedLaunches();
+      if (cachedLaunches != null) {
+        final endIndex = (offset + limit).clamp(0, cachedLaunches.length);
+        final startIndex = offset.clamp(0, cachedLaunches.length);
+        
+        if (startIndex >= cachedLaunches.length) {
+          return [];
+        }
+        
+        return cachedLaunches.sublist(startIndex, endIndex);
+      }
+      
       if (e is app_exceptions.AppException) rethrow;
       throw app_exceptions.ServerException('Failed to fetch launches: ${e.toString()}');
     }
@@ -80,23 +138,45 @@ class LaunchRepositoryImpl implements LaunchRepository {
 
   @override
   Future<List<LaunchEntity>> getUpcomingLaunches() async {
+    // Check if we have internet connectivity
+    final hasConnection = await _connectivityManager.checkConnectivity();
+    
+    // Try to get cached data first if offline
+    if (!hasConnection) {
+      final cachedLaunches = await _cacheManager.getCachedUpcomingLaunches();
+      if (cachedLaunches != null) {
+        return cachedLaunches;
+      }
+      throw app_exceptions.NetworkException('No internet connection and no cached data available');
+    }
+
     try {
       final QueryOptions options = QueryOptions(
         document: gql(upcomingLaunchesQuery),
         variables: {
           'limit': 50,
         },
-        fetchPolicy: FetchPolicy.cacheAndNetwork,
+        fetchPolicy: FetchPolicy.networkOnly, // Always fetch fresh data
         errorPolicy: ErrorPolicy.all,
       );
 
       final QueryResult result = await _client.query(options);
 
       if (result.hasException) {
+        // Try to return cached data as fallback
+        final cachedLaunches = await _cacheManager.getCachedUpcomingLaunches();
+        if (cachedLaunches != null) {
+          return cachedLaunches;
+        }
         throw _handleGraphQLException(result.exception!);
       }
 
       if (result.data == null || result.data!['launchesUpcoming'] == null) {
+        // Try to return cached data as fallback
+        final cachedLaunches = await _cacheManager.getCachedUpcomingLaunches();
+        if (cachedLaunches != null) {
+          return cachedLaunches;
+        }
         return [];
       }
 
@@ -105,8 +185,20 @@ class LaunchRepositoryImpl implements LaunchRepository {
           .map((json) => Launch.fromJson(json))
           .toList();
 
-      return launches.map(_mapToEntity).toList();
+      final upcomingLaunches = launches.map(_mapToEntity).toList();
+      
+      // Cache the upcoming launches data for offline use
+      final upcomingJson = upcomingLaunches.map((launch) => _mapToJson(launch)).toList();
+      await _cacheManager.cacheUpcomingLaunchesJson(upcomingJson);
+
+      return upcomingLaunches;
     } catch (e) {
+      // Try to return cached data as fallback
+      final cachedLaunches = await _cacheManager.getCachedUpcomingLaunches();
+      if (cachedLaunches != null) {
+        return cachedLaunches;
+      }
+      
       if (e is app_exceptions.AppException) rethrow;
       throw app_exceptions.ServerException('Failed to fetch upcoming launches: ${e.toString()}');
     }
@@ -114,23 +206,45 @@ class LaunchRepositoryImpl implements LaunchRepository {
 
   @override
   Future<List<LaunchEntity>> getPastLaunches({int limit = 50}) async {
+    // Check if we have internet connectivity
+    final hasConnection = await _connectivityManager.checkConnectivity();
+    
+    // Try to get cached data first if offline
+    if (!hasConnection) {
+      final cachedLaunches = await _cacheManager.getCachedPastLaunches();
+      if (cachedLaunches != null) {
+        return cachedLaunches.take(limit).toList();
+      }
+      throw app_exceptions.NetworkException('No internet connection and no cached data available');
+    }
+
     try {
       final QueryOptions options = QueryOptions(
         document: gql(pastLaunchesQuery),
         variables: {
           'limit': limit,
         },
-        fetchPolicy: FetchPolicy.cacheAndNetwork,
+        fetchPolicy: FetchPolicy.networkOnly, // Always fetch fresh data
         errorPolicy: ErrorPolicy.all,
       );
 
       final QueryResult result = await _client.query(options);
 
       if (result.hasException) {
+        // Try to return cached data as fallback
+        final cachedLaunches = await _cacheManager.getCachedPastLaunches();
+        if (cachedLaunches != null) {
+          return cachedLaunches.take(limit).toList();
+        }
         throw _handleGraphQLException(result.exception!);
       }
 
       if (result.data == null || result.data!['launchesPast'] == null) {
+        // Try to return cached data as fallback
+        final cachedLaunches = await _cacheManager.getCachedPastLaunches();
+        if (cachedLaunches != null) {
+          return cachedLaunches.take(limit).toList();
+        }
         return [];
       }
 
@@ -139,8 +253,20 @@ class LaunchRepositoryImpl implements LaunchRepository {
           .map((json) => Launch.fromJson(json))
           .toList();
 
-      return launches.map(_mapToEntity).toList();
+      final pastLaunches = launches.map(_mapToEntity).toList();
+      
+      // Cache the past launches data for offline use
+      final pastJson = pastLaunches.map((launch) => _mapToJson(launch)).toList();
+      await _cacheManager.cachePastLaunchesJson(pastJson);
+
+      return pastLaunches;
     } catch (e) {
+      // Try to return cached data as fallback
+      final cachedLaunches = await _cacheManager.getCachedPastLaunches();
+      if (cachedLaunches != null) {
+        return cachedLaunches.take(limit).toList();
+      }
+      
       if (e is app_exceptions.AppException) rethrow;
       throw app_exceptions.ServerException('Failed to fetch past launches: ${e.toString()}');
     }
@@ -315,7 +441,7 @@ class LaunchRepositoryImpl implements LaunchRepository {
     }
   }
 
-  /// Maps Launch data model to LaunchEntity domain entity
+  // Maps Launch data model to LaunchEntity domain entity
   LaunchEntity _mapToEntity(Launch launch) {
     return LaunchEntity(
       flightNumber: launch.flightNumber,
@@ -354,7 +480,38 @@ class LaunchRepositoryImpl implements LaunchRepository {
     );
   }
 
-  /// Handles GraphQL exceptions and converts them to appropriate app exceptions
+  // Maps LaunchEntity domain entity back to JSON for caching
+  Map<String, dynamic> _mapToJson(LaunchEntity launch) {
+    return {
+      'flight_number': launch.flightNumber,
+      'mission_name': launch.missionName,
+      'launch_date_unix': launch.dateUtc?.millisecondsSinceEpoch != null 
+          ? (launch.dateUtc!.millisecondsSinceEpoch / 1000).round()
+          : 0,
+      'launch_success': launch.success,
+      'upcoming': launch.upcoming,
+      'details': launch.details,
+      'links': {
+        'mission_patch': launch.links?.missionPatch,
+        'mission_patch_small': launch.links?.missionPatchSmall,
+        'article_link': launch.links?.article,
+        'wikipedia': launch.links?.wikipedia,
+        'video_link': launch.links?.videoLink,
+        'flickr_images': launch.links?.flickrImages ?? [],
+      },
+      'rocket': launch.rocket != null ? {
+        'rocket_id': launch.rocket!.id,
+        'rocket_name': launch.rocket!.name,
+        'rocket_type': launch.rocket!.type,
+      } : null,
+      'launch_site': launch.launchSite != null ? {
+        'site_id': launch.launchSite!.id,
+        'site_name': launch.launchSite!.name,
+      } : null,
+    };
+  }
+
+  // Handles GraphQL exceptions and converts them to appropriate app exceptions
   app_exceptions.AppException _handleGraphQLException(OperationException exception) {
     if (exception.linkException != null) {
       final linkException = exception.linkException!;
