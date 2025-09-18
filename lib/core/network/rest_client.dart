@@ -2,8 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'api_endpoints.dart';
 
-// REST Client for SpaceX API
-// Provides a configured Dio instance for making HTTP requests to the SpaceX API
+// REST Client for SpaceX API (Provides a configured Dio instance for making HTTP requests)
+
 class RestClient {
   static RestClient? _instance;
   late final Dio _dio;

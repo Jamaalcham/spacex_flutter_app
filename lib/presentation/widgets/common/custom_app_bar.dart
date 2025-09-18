@@ -28,9 +28,9 @@ class CustomAppBar extends StatelessWidget {
   });
 
   /// Factory constructor for Settings screen
-  factory CustomAppBar.settings() {
-    return const CustomAppBar(
-      title: 'Settings',
+  factory CustomAppBar.settings({String? title}) {
+    return CustomAppBar(
+      title: title ?? 'Settings',
       centerTitle: true,
     );
   }

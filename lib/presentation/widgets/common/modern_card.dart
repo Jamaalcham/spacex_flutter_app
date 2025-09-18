@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../../../core/utils/colors.dart';
+import '../../../core/utils/animations.dart';
+import 'animated_card.dart';
 
-/// Modern glassmorphism card widget with consistent space-themed styling
+/// Modern glassmorphism card widget with consistent space-themed styling and animations
 class ModernCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? margin;
@@ -12,6 +14,8 @@ class ModernCard extends StatelessWidget {
   final bool isDark;
   final VoidCallback? onTap;
   final double? elevation;
+  final Duration? animationDelay;
+  final bool enableHoverAnimation;
 
   const ModernCard({
     Key? key,
@@ -23,17 +27,18 @@ class ModernCard extends StatelessWidget {
     this.gradientColors,
     this.onTap,
     this.elevation,
+    this.animationDelay,
+    this.enableHoverAnimation = true,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final cardContent = Container(
       margin: margin ?? EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.w),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(borderRadius ?? 16),
+      child: AnimatedSpaceButton(
+        onTap: onTap,
+        child: Material(
+          color: Colors.transparent,
           child: Container(
             padding: padding ?? EdgeInsets.all(4.w),
             decoration: BoxDecoration(
@@ -73,6 +78,18 @@ class ModernCard extends StatelessWidget {
         ),
       ),
     );
+
+    // Return with entrance animation if delay is specified
+    if (animationDelay != null) {
+      return AnimatedCard(
+        delay: animationDelay!,
+        enableHover: enableHoverAnimation,
+        onTap: onTap,
+        child: cardContent,
+      );
+    }
+    
+    return cardContent;
   }
 }
 

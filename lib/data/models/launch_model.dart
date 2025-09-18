@@ -263,25 +263,37 @@ class Launch {
   /// 
   /// Handles both REST API and GraphQL response formats
   factory Launch.fromJson(Map<String, dynamic> json) {
-    // Handle GraphQL format (uses same field names as REST API)
-    if (json.containsKey('id') && json.containsKey('mission_name')) {
+    // Handle GraphQL format - check for GraphQL-specific fields
+    // Note: launch_year might be null, so we check if the key exists but don't require a value
+    if (json.containsKey('mission_name') && json.containsKey('launch_date_local')) {
+      // Parse launch_date_local to get Unix timestamp
+      int launchDateUnix = 0;
+      try {
+        if (json['launch_date_local'] != null) {
+          final dateTime = DateTime.parse(json['launch_date_local']);
+          launchDateUnix = dateTime.millisecondsSinceEpoch ~/ 1000;
+        }
+      } catch (e) {
+        // Keep default value of 0
+      }
+
       return Launch(
-        flightNumber: 0, // Not available in GraphQL
+        flightNumber: 0, // Not available in simplified GraphQL
         missionName: json['mission_name']?.toString() ?? 'Unknown Mission',
-        missionId: [], // Not available in GraphQL
-        launchYear: _extractYear(json['launch_date_utc']),
-        launchDateUnix: json['launch_date_unix']?.toInt() ?? 0,
-        launchDateUtc: json['launch_date_utc']?.toString() ?? '',
-        launchDateLocal: json['launch_date_utc']?.toString() ?? '', // Use UTC as fallback
-        isTentative: false, // Not available in GraphQL
+        missionId: [], // Not available in simplified GraphQL
+        launchYear: json['launch_year']?.toString() ?? '',
+        launchDateUnix: launchDateUnix,
+        launchDateUtc: json['launch_date_local']?.toString() ?? '', // Use local as fallback
+        launchDateLocal: json['launch_date_local']?.toString() ?? '',
+        isTentative: false, // Not available in simplified GraphQL
         tentativeMaxPrecision: null,
-        launchSuccess: json['launch_success'],
+        launchSuccess: json['launch_success'], // Can be null in GraphQL response
         launchFailureDetails: null,
         upcoming: json['upcoming'] ?? false,
         details: json['details']?.toString(),
-        rocket: LaunchRocket.fromJson(json['rocket'] ?? {}),
-        launchSite: null, // Not available in current GraphQL query
-        links: LaunchLinks.fromJson({}), // Not available in current GraphQL query
+        rocket: LaunchRocket.fromJson({}), // Not available in simplified GraphQL
+        launchSite: null, // Not available in simplified GraphQL
+        links: LaunchLinks.fromJson({}), // Not available in simplified GraphQL
         staticFireDateUtc: null,
         staticFireDateUnix: null,
         timeline: null,
@@ -318,15 +330,6 @@ class Launch {
     );
   }
 
-  /// Helper method to extract year from date string
-  static String _extractYear(String? dateString) {
-    if (dateString == null) return '';
-    try {
-      return DateTime.parse(dateString).year.toString();
-    } catch (e) {
-      return '';
-    }
-  }
 
   /// Converts Launch instance to JSON format
   Map<String, dynamic> toJson() {

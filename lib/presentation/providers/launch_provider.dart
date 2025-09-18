@@ -27,7 +27,7 @@ class LaunchProvider extends ChangeNotifier {
   
   // Pagination
   int _currentPage = 0;
-  final int _pageSize = 20;
+  final int _pageSize = 10; // Reduced page size for faster initial loading
   bool _hasMoreData = true;
   
   // View mode
@@ -64,25 +64,31 @@ class LaunchProvider extends ChangeNotifier {
       switch (_currentFilter) {
         case LaunchFilter.upcoming:
           fetchedLaunches = await _repository.getUpcomingLaunches();
+          _hasMoreData = false; // Upcoming launches are finite
           break;
         case LaunchFilter.past:
           fetchedLaunches = await _repository.getPastLaunches(limit: _pageSize);
+          _hasMoreData = fetchedLaunches.length == _pageSize;
           break;
         case LaunchFilter.successful:
           fetchedLaunches = await _repository.getLaunchesBySuccess(success: true, limit: _pageSize);
+          _hasMoreData = fetchedLaunches.length == _pageSize;
           break;
         case LaunchFilter.failed:
           fetchedLaunches = await _repository.getLaunchesBySuccess(success: false, limit: _pageSize);
+          _hasMoreData = fetchedLaunches.length == _pageSize;
           break;
         default:
+          // For 'all' filter, use optimized pagination
           fetchedLaunches = await _repository.getLaunchesWithPagination(
             limit: _pageSize,
             offset: 0,
           );
+          // Check if we have more data by seeing if we got the full page size
+          _hasMoreData = fetchedLaunches.length >= _pageSize;
       }
       
       _launches = fetchedLaunches;
-      _hasMoreData = fetchedLaunches.length == _pageSize;
       _applyFilters();
     } catch (e) {
       _error = _getErrorMessage(e);
@@ -96,22 +102,41 @@ class LaunchProvider extends ChangeNotifier {
 
   /// Loads more launches for pagination
   Future<void> loadMoreLaunches() async {
-    if (_isLoadingMore || !_hasMoreData || _currentFilter != LaunchFilter.all) return;
+    if (_isLoadingMore || !_hasMoreData) return;
 
     _isLoadingMore = true;
     notifyListeners();
 
     try {
       final nextPage = _currentPage + 1;
-      final moreLaunches = await _repository.getLaunchesWithPagination(
-        limit: _pageSize,
-        offset: nextPage * _pageSize,
-      );
+      List<LaunchEntity> moreLaunches;
+      
+      switch (_currentFilter) {
+        case LaunchFilter.upcoming:
+          // No more data for upcoming launches
+          _hasMoreData = false;
+          return;
+        case LaunchFilter.past:
+          moreLaunches = await _repository.getPastLaunches(limit: _pageSize);
+          break;
+        case LaunchFilter.successful:
+          moreLaunches = await _repository.getLaunchesBySuccess(success: true, limit: _pageSize);
+          break;
+        case LaunchFilter.failed:
+          moreLaunches = await _repository.getLaunchesBySuccess(success: false, limit: _pageSize);
+          break;
+        default:
+          // For 'all' filter, load more with proper offset
+          moreLaunches = await _repository.getLaunchesWithPagination(
+            limit: _pageSize,
+            offset: nextPage * _pageSize,
+          );
+      }
 
       if (moreLaunches.isNotEmpty) {
         _launches.addAll(moreLaunches);
         _currentPage = nextPage;
-        _hasMoreData = moreLaunches.length == _pageSize;
+        _hasMoreData = moreLaunches.length >= _pageSize;
         _applyFilters();
       } else {
         _hasMoreData = false;

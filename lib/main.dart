@@ -6,13 +6,14 @@ import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'core/utils/app_theme.dart';
 import 'core/utils/localization/language_constants.dart';
 import 'presentation/providers/theme_provider.dart';
 import 'presentation/providers/language_provider.dart';
 import 'presentation/providers/capsule_provider.dart';
 import 'presentation/providers/rocket_provider.dart';
 import 'presentation/providers/launch_provider.dart';
+import 'presentation/providers/launchpad_provider.dart';
+import 'presentation/providers/landpad_provider.dart';
 import 'presentation/screens/splash_screen.dart';
 
 void main() async {
@@ -30,29 +31,45 @@ class SpaceXApp extends StatefulWidget {
   @override
   State<SpaceXApp> createState() => _SpaceXAppState();
 
-  static void setLocale(BuildContext context, Locale newLocale) {
-    _SpaceXAppState? state = context.findAncestorStateOfType<_SpaceXAppState>();
-    state?.setLocale(newLocale);
-  }
 }
 
 class _SpaceXAppState extends State<SpaceXApp> {
   late LanguageProvider _languageProvider;
+  Locale? _currentLocale;
 
   @override
   void initState() {
     super.initState();
     _languageProvider = LanguageProvider();
     _initializeLanguage();
+    
+    // Listen to language provider changes
+    _languageProvider.addListener(_onLanguageChanged);
+  }
+
+  @override
+  void dispose() {
+    _languageProvider.removeListener(_onLanguageChanged);
+    super.dispose();
+  }
+
+  void _onLanguageChanged() {
+    if (mounted) {
+      setState(() {
+        _currentLocale = _languageProvider.locale;
+      });
+    }
   }
 
   Future<void> _initializeLanguage() async {
     await _languageProvider.initializeLanguage();
+    if (mounted) {
+      setState(() {
+        _currentLocale = _languageProvider.locale;
+      });
+    }
   }
 
-  void setLocale(Locale locale) {
-    _languageProvider.changeLanguage(locale.languageCode);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +80,8 @@ class _SpaceXAppState extends State<SpaceXApp> {
         ChangeNotifierProvider(create: (_) => CapsuleProvider()),
         ChangeNotifierProvider(create: (_) => RocketProvider()),
         ChangeNotifierProvider(create: (_) => LaunchProvider()),
+        ChangeNotifierProvider(create: (_) => LaunchpadProvider()),
+        ChangeNotifierProvider(create: (_) => LandpadProvider()),
       ],
       child: Consumer2<ThemeProvider, LanguageProvider>(
         builder: (context, themeProvider, languageProvider, child) {
@@ -74,7 +93,8 @@ class _SpaceXAppState extends State<SpaceXApp> {
                 theme: themeProvider.lightTheme,
                 darkTheme: themeProvider.darkTheme,
                 themeMode: themeProvider.themeMode,
-                locale: languageProvider.locale,
+                locale: _currentLocale ?? languageProvider.locale,
+                fallbackLocale: const Locale('en', 'US'),
                 localizationsDelegates: [
                   FlutterI18nDelegate(
                     translationLoader: FileTranslationLoader(

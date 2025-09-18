@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sizer/sizer.dart';
 import 'package:get/get.dart';
+import 'package:flutter_i18n/flutter_i18n.dart';
 
 import '../../core/utils/colors.dart';
 import '../../core/utils/spacing.dart';
 import '../../core/utils/typography.dart';
+import '../../core/utils/localization/language_constants.dart';
 import '../providers/theme_provider.dart';
 import '../providers/language_provider.dart';
 import '../widgets/common/glass_background.dart';
@@ -33,7 +35,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             children: [
               // Custom App Bar without back arrow
-              CustomAppBar.settings(),
+              CustomAppBar.settings(title: getTranslated(context, 'settings')),
               
               // Settings Content
               Expanded(
@@ -45,19 +47,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       SizedBox(height: 3.h),
                       
                       // APPEARANCE Section
-                      _buildSectionLabel('APPEARANCE'),
+                      _buildSectionLabel(getTranslated(context, 'appearance')),
                       SizedBox(height: 2.h),
                       _buildAppearanceSection(),
                       SizedBox(height: 4.h),
                       
                       // GENERAL Section
-                      _buildSectionLabel('GENERAL'),
+                      _buildSectionLabel(getTranslated(context, 'general')),
                       SizedBox(height: 2.h),
                       _buildGeneralSection(),
                       SizedBox(height: 4.h),
                       
                       // ABOUT Section
-                      _buildSectionLabel('ABOUT'),
+                      _buildSectionLabel(getTranslated(context, 'about')),
                       SizedBox(height: 2.h),
                       _buildAboutSection(),
                       SizedBox(height: 10.h), // Bottom padding for navigation
@@ -104,7 +106,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 icon: themeProvider.themeMode == ThemeMode.dark 
                     ? Icons.dark_mode 
                     : Icons.light_mode_outlined,
-                title: 'Dark Mode',
+                title: getTranslated(context, 'dark_mode'),
                 trailing: Switch(
                   value: themeProvider.themeMode == ThemeMode.dark,
                   onChanged: (value) {
@@ -140,7 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           _buildSettingItem(
             icon: Icons.notifications_outlined,
-            title: 'Notifications',
+            title: getTranslated(context, 'notifications'),
             trailing: const Icon(
               Icons.chevron_right,
               color: Colors.grey,
@@ -154,7 +156,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             builder: (context, languageProvider, child) {
               return _buildSettingItem(
                 icon: Icons.language_outlined,
-                title: 'Language',
+                title: getTranslated(context, 'language'),
                 subtitle: languageProvider.currentLanguageName,
                 trailing: const Icon(
                   Icons.chevron_right,
@@ -185,13 +187,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           _buildSettingItem(
             icon: Icons.tag,
-            title: 'Version',
+            title: getTranslated(context, 'version'),
             subtitle: '1.0.0',
           ),
           _buildDivider(),
           _buildSettingItem(
             icon: Icons.shield_outlined,
-            title: 'Privacy Policy',
+            title: getTranslated(context, 'privacy_policy'),
             trailing: const Icon(
               Icons.chevron_right,
               color: Colors.grey,
@@ -203,7 +205,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildDivider(),
           _buildSettingItem(
             icon: Icons.description_outlined,
-            title: 'Terms of Service',
+            title: getTranslated(context, 'terms_of_service'),
             trailing: const Icon(
               Icons.chevron_right,
               color: Colors.grey,
@@ -291,7 +293,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           borderRadius: BorderRadius.circular(16),
         ),
         title: Text(
-          'Choose Language',
+          getTranslated(context, 'choose_language'),
           style: AppTypography.getTitle(Theme.of(context).brightness == Brightness.dark).copyWith(
             fontWeight: AppTypography.medium,
           ),
@@ -300,12 +302,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildLanguageOption(
-              'English',
+              getTranslated(context, 'english'),
               const Locale('en', 'US'),
               languageProvider,
             ),
             _buildLanguageOption(
-              'Français',
+              getTranslated(context, 'french'),
               const Locale('fr', 'FR'),
               languageProvider,
             ),
@@ -324,8 +326,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     
     return InkWell(
       onTap: () async {
+        // Change language first
         await languageProvider.changeLanguage(locale.languageCode, context);
+        
+        // Close dialog after language change
         Get.back();
+        
+        // Show brief success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              getTranslated(context, 'language_updated_to', 
+                params: {'language': languageProvider.getLanguageName(locale.languageCode)}
+              )
+            ),
+            duration: const Duration(seconds: 2),
+            backgroundColor: AppColors.spaceBlue,
+          ),
+        );
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(

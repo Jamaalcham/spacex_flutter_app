@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:get/get.dart';
 import 'dart:ui' as ui;
 
 import '../../data/models/language_model.dart';
@@ -16,6 +17,14 @@ class LanguageProvider extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
   
   String get currentLanguageName => _selectedLanguage.name;
+  
+  String getLanguageName(String languageCode) {
+    final language = _languages.firstWhere(
+      (lang) => lang.languageCode.toLowerCase() == languageCode.toLowerCase(),
+      orElse: () => _languages.first,
+    );
+    return language.name;
+  }
 
   LanguageProvider() {
     _selectedLanguage = _languages.first;
@@ -127,7 +136,12 @@ class LanguageProvider extends ChangeNotifier {
         await FlutterI18n.refresh(context, Locale(languageCode));
       }
       
+      // Notify listeners to trigger UI rebuild
       notifyListeners();
+      
+      // Update GetX locale immediately for real-time changes
+      final newLocale = Locale(languageCode);
+      Get.updateLocale(newLocale);
     } catch (e) {
       debugPrint('Error changing language: $e');
     }

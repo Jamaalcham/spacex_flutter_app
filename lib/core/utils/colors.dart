@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-/// SpaceX Application Color Palette - Professional Space-Themed Design System
+// SpaceX Application Color Palette - Professional Space-Themed Design System
 class AppColors {
   // === MANDATORY SPACEX COLOR PALETTE ===
   
   // Primary Colors
   static const Color spaceBlue = Color(0xFF1E3A8A);        // Main actions, headers, navigation
-  static const Color rocketOrange = Color(0xFFF59E0B);     // CTAs, highlights, accent elements
+  static const Color rocketOrange = Color(0xFFF59E0B);     // Highlights, accent elements
   static const Color missionGreen = Color(0xFF10B981);     // Success states, completed missions
   static const Color launchRed = Color(0xFFEF4444);        // Error states, failed missions
   
@@ -85,12 +85,12 @@ class AppColors {
   
   // Shimmer Colors
   static Color shimmerBase = cardSurface;
-  static Color lightShimmerBase = Color(0xFFE1E5E9);
+  static Color lightShimmerBase = const Color(0xFFE1E5E9);
   static Color shimmerHighlight = Colors.white.withValues(alpha:0.1);
   static Color lightShimmerHighlight = Colors.white;
   
   // === PROFESSIONAL GRADIENT SYSTEM ===
-  
+
   // Primary Space Gradient
   static const LinearGradient spaceGradient = LinearGradient(
     begin: Alignment.topLeft,
@@ -102,7 +102,7 @@ class AppColors {
     ],
     stops: [0.0, 0.5, 1.0],
   );
-  
+
   // Rocket Launch Gradient
   static const LinearGradient rocketGradient = LinearGradient(
     begin: Alignment.topLeft,
@@ -112,7 +112,7 @@ class AppColors {
       launchRed,
     ],
   );
-  
+
   // Mission Success Gradient
   static const LinearGradient missionGradient = LinearGradient(
     begin: Alignment.topLeft,
@@ -122,7 +122,7 @@ class AppColors {
       Color(0xFF059669),
     ],
   );
-  
+
   // Deep Space Background Gradient (renamed from nebulaGradient)
   static const LinearGradient deepSpaceGradient = LinearGradient(
     begin: Alignment.topCenter,
@@ -137,52 +137,7 @@ class AppColors {
   
   // Nebula Gradient (for backward compatibility)
   static const LinearGradient nebulaGradient = deepSpaceGradient;
-  
-  // Galaxy Gradient
-  static const LinearGradient galaxyGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [
-      purpleAccent,
-      spaceBlue,
-      darkSpace,
-    ],
-    stops: [0.0, 0.5, 1.0],
-  );
-  
-  // Light Space Gradient
-  static const LinearGradient lightSpaceGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      Color(0xFF3B82F6),
-      Color(0xFF8B5CF6),
-      Color(0xFFF59E0B),
-    ],
-    stops: [0.0, 0.5, 1.0],
-  );
-  
-  // Glassmorphism Gradients
-  static LinearGradient glassDark = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      Colors.white.withValues(alpha:0.1),
-      Colors.white.withValues(alpha:0.05),
-    ],
-  );
-  
-  static LinearGradient glassLight = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      Colors.white.withValues(alpha:0.9),
-      Colors.white.withValues(alpha:0.7),
-    ],
-  );
-  
-  // === SEMANTIC COLOR SYSTEM ===
-  
+
   // Status Colors with Opacity Variants
   static Color successLight = missionGreen.withValues(alpha:0.1);
   static Color errorLight = launchRed.withValues(alpha:0.1);
@@ -201,39 +156,6 @@ class AppColors {
   static Color glowOrange = rocketOrange.withValues(alpha:0.4);
   static Color glowGreen = missionGreen.withValues(alpha:0.4);
 
-  // === SCREEN-SPECIFIC BACKGROUND SYSTEM ===
-  
-  /// Gets consistent background gradient with screen-specific accent overlay
-  static BoxDecoration getScreenBackground({
-    required bool isDark,
-    AppScreenType screenType = AppScreenType.general,
-  }) {
-    // Base consistent gradient for all screens
-    final baseGradient = isDark ? deepSpaceGradient : lightSpaceGradient;
-    
-    // Screen-specific accent overlay
-    Color? accentColor;
-    switch (screenType) {
-      case AppScreenType.missions:
-        accentColor = spaceBlue;
-        break;
-      case AppScreenType.rockets:
-        accentColor = rocketOrange;
-        break;
-      case AppScreenType.launches:
-        accentColor = launchRed;
-        break;
-      case AppScreenType.general:
-        accentColor = null;
-        break;
-    }
-    
-    return BoxDecoration(
-      gradient: baseGradient,
-      // Add subtle screen-specific overlay if specified
-      backgroundBlendMode: accentColor != null ? BlendMode.overlay : null,
-    );
-  }
   
   /// Gets screen-specific accent overlay container
   static Widget getScreenAccentOverlay({

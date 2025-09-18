@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../core/utils/colors.dart';
-import '../../core/utils/spacing.dart';
 import '../../core/utils/typography.dart';
 import '../../domain/entities/rocket_entity.dart';
 import '../providers/rocket_provider.dart';
@@ -56,9 +55,17 @@ class _RocketsScreenState extends State<RocketsScreen> {
     }
   }
 
-  // Handles search input changes
-  void _onSearchChanged(String query) {
-    context.read<RocketProvider>().searchRockets(query);
+  // Handles search submission when user presses search key
+  void _onSearchSubmitted(String query) {
+    if (query.trim().isNotEmpty) {
+      context.read<RocketProvider>().searchRockets(query.trim());
+    }
+  }
+
+  // Handles clearing search
+  void _onSearchCleared() {
+    context.read<RocketProvider>().searchRockets('');
+    setState(() {}); // Refresh to hide clear button
   }
 
   // Handles filter selection
@@ -128,6 +135,9 @@ class _RocketsScreenState extends State<RocketsScreen> {
                     margin: EdgeInsets.all(4.w),
                     child: TextField(
                       controller: _searchController,
+                      autofocus: true,
+                      textInputAction: TextInputAction.search,
+                      onSubmitted: _onSearchSubmitted,
                       style: AppTypography.getBody(isDark),
                       decoration: InputDecoration(
                         hintText: 'Search rockets by name or type...',
@@ -144,7 +154,7 @@ class _RocketsScreenState extends State<RocketsScreen> {
                                 ),
                                 onPressed: () {
                                   _searchController.clear();
-                                  _onSearchChanged('');
+                                  _onSearchCleared();
                                 },
                               )
                             : null,
@@ -177,7 +187,6 @@ class _RocketsScreenState extends State<RocketsScreen> {
                         ),
                       ),
                       onChanged: (value) {
-                        _onSearchChanged(value);
                         setState(() {}); // Rebuild to show/hide clear button
                       },
                     ),

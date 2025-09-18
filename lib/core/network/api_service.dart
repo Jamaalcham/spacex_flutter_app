@@ -4,7 +4,7 @@ import 'network_exceptions.dart';
 import 'api_endpoints.dart';
 
 // API Service for SpaceX data
-// Provides high-level methods to interact with the SpaceX API
+
 class ApiService {
   static ApiService? _instance;
   final RestClient _restClient;

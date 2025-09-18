@@ -24,31 +24,54 @@ class LaunchRepositoryImpl implements LaunchRepository {
     int offset = 0,
   }) async {
     try {
-      final result = await _client.query(QueryOptions(
-        document: gql(launchesQuery),
+      // For initial load, get upcoming launches first (they're usually fewer)
+      // Then get paginated past launches
+      final List<LaunchEntity> allLaunches = [];
+      
+      if (offset == 0) {
+        // First page: get upcoming launches
+        final upcomingResult = await _client.query(QueryOptions(
+          document: gql(upcomingLaunchesQuery),
+          variables: {'limit': 10}, // Limit upcoming to 10
+          fetchPolicy: FetchPolicy.cacheAndNetwork,
+          errorPolicy: ErrorPolicy.all,
+        ));
+
+        if (!upcomingResult.hasException && upcomingResult.data != null) {
+          if (upcomingResult.data!['launchesUpcoming'] != null) {
+            final List<dynamic> upcomingJson = upcomingResult.data!['launchesUpcoming'];
+            final List<Launch> upcomingLaunches = upcomingJson
+                .map((json) => Launch.fromJson(json))
+                .toList();
+            allLaunches.addAll(upcomingLaunches.map(_mapToEntity));
+          }
+        }
+      }
+      
+      // Get paginated past launches
+      final pastResult = await _client.query(QueryOptions(
+        document: gql(paginatedLaunchesQuery),
         variables: {
           'limit': limit,
           'offset': offset,
-          'order': 'desc', // Most recent first
         },
         fetchPolicy: FetchPolicy.cacheAndNetwork,
         errorPolicy: ErrorPolicy.all,
       ));
 
-      if (result.hasException) {
-        throw _handleGraphQLException(result.exception!);
+      if (pastResult.hasException) {
+        throw _handleGraphQLException(pastResult.exception!);
       }
 
-      if (result.data == null || result.data!['launches'] == null) {
-        return [];
+      if (pastResult.data != null && pastResult.data!['launchesPast'] != null) {
+        final List<dynamic> pastJson = pastResult.data!['launchesPast'];
+        final List<Launch> pastLaunches = pastJson
+            .map((json) => Launch.fromJson(json))
+            .toList();
+        allLaunches.addAll(pastLaunches.map(_mapToEntity));
       }
-
-      final List<dynamic> launchesJson = result.data!['launches'];
-      final List<Launch> launches = launchesJson
-          .map((json) => Launch.fromJson(json))
-          .toList();
-
-      return launches.map(_mapToEntity).toList();
+      
+      return allLaunches;
     } catch (e) {
       if (e is app_exceptions.AppException) rethrow;
       throw app_exceptions.ServerException('Failed to fetch launches: ${e.toString()}');
@@ -59,7 +82,10 @@ class LaunchRepositoryImpl implements LaunchRepository {
   Future<List<LaunchEntity>> getUpcomingLaunches() async {
     try {
       final QueryOptions options = QueryOptions(
-        document: gql(launchesQuery),
+        document: gql(upcomingLaunchesQuery),
+        variables: {
+          'limit': 50,
+        },
         fetchPolicy: FetchPolicy.cacheAndNetwork,
         errorPolicy: ErrorPolicy.all,
       );
@@ -90,8 +116,10 @@ class LaunchRepositoryImpl implements LaunchRepository {
   Future<List<LaunchEntity>> getPastLaunches({int limit = 50}) async {
     try {
       final QueryOptions options = QueryOptions(
-        document: gql(launchesQuery),
-        variables: {'limit': limit},
+        document: gql(pastLaunchesQuery),
+        variables: {
+          'limit': limit,
+        },
         fetchPolicy: FetchPolicy.cacheAndNetwork,
         errorPolicy: ErrorPolicy.all,
       );
@@ -292,7 +320,9 @@ class LaunchRepositoryImpl implements LaunchRepository {
     return LaunchEntity(
       flightNumber: launch.flightNumber,
       missionName: launch.missionName,
-      dateUtc: DateTime.fromMillisecondsSinceEpoch(launch.launchDateUnix * 1000),
+      dateUtc: launch.launchDateUnix > 0 
+          ? DateTime.fromMillisecondsSinceEpoch(launch.launchDateUnix * 1000)
+          : null,
       success: launch.launchSuccess,
       upcoming: launch.upcoming,
       details: launch.details,
@@ -304,19 +334,23 @@ class LaunchRepositoryImpl implements LaunchRepository {
         videoLink: launch.links.videoLink,
         flickrImages: launch.links.flickrImages,
       ),
-      rocket: LaunchRocketEntity(
-        id: launch.rocket.rocketId,
-        name: launch.rocket.rocketName,
-        type: launch.rocket.rocketType,
-        coreSerial: null, // Not available in current model
-        coreReuse: null, // Not available in current model
-        landingSuccess: null, // Not available in current model
-      ),
-      launchSite: LaunchSiteEntity(
-        id: launch.launchSite!.siteId,
-        name: launch.launchSite!.siteName,
-        nameShort: launch.launchSite!.siteName, // Use siteName as short name
-      ),
+      rocket: launch.rocket.rocketName.isNotEmpty 
+          ? LaunchRocketEntity(
+              id: launch.rocket.rocketId,
+              name: launch.rocket.rocketName,
+              type: launch.rocket.rocketType,
+              coreSerial: null, // Not available in simplified GraphQL
+              coreReuse: null, // Not available in simplified GraphQL
+              landingSuccess: null, // Not available in simplified GraphQL
+            )
+          : null,
+      launchSite: launch.launchSite != null 
+          ? LaunchSiteEntity(
+              id: launch.launchSite!.siteId,
+              name: launch.launchSite!.siteName,
+              nameShort: launch.launchSite!.siteName, // Use siteName as short name
+            )
+          : null,
     );
   }
 

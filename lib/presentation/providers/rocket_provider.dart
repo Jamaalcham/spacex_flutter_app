@@ -4,6 +4,9 @@ import '../../domain/entities/rocket_entity.dart';
 import '../../domain/repositories/rocket_repository.dart';
 import '../../data/repositories/rocket_repository_impl.dart';
 import '../../core/network/network_exceptions.dart';
+import '../../domain/use_cases/get_rockets_use_case.dart';
+import '../../domain/use_cases/get_rocket_by_id_use_case.dart';
+import '../../domain/use_cases/search_rockets_use_case.dart';
 
 /// Provider for managing rocket-related state and operations
 /// 
@@ -12,6 +15,11 @@ import '../../core/network/network_exceptions.dart';
 /// for rocket-related UI components.
 class RocketProvider extends ChangeNotifier {
   final RocketRepository _repository;
+  
+  // Use cases
+  late final GetRocketsUseCase _getRocketsUseCase;
+  late final GetRocketByIdUseCase _getRocketByIdUseCase;
+  late final SearchRocketsUseCase _searchRocketsUseCase;
 
   // State variables
   List<RocketEntity> _rockets = [];
@@ -25,7 +33,12 @@ class RocketProvider extends ChangeNotifier {
   bool _isGridView = true;
 
   RocketProvider({RocketRepository? repository})
-      : _repository = repository ?? RocketRepositoryImpl();
+      : _repository = repository ?? RocketRepositoryImpl() {
+    // Initialize use cases
+    _getRocketsUseCase = GetRocketsUseCase(_repository);
+    _getRocketByIdUseCase = GetRocketByIdUseCase(_repository);
+    _searchRocketsUseCase = SearchRocketsUseCase(_repository);
+  }
 
   // Getters
   List<RocketEntity> get rockets => _filteredRockets.isEmpty && _searchQuery.isEmpty && _currentFilter == RocketFilter.all
@@ -39,7 +52,7 @@ class RocketProvider extends ChangeNotifier {
   bool get isGridView => _isGridView;
   bool get isEmpty => rockets.isEmpty && !_isLoading;
 
-  /// Fetches all rockets data
+  /// Fetches all rockets data using Clean Architecture use case
   Future<void> fetchRockets() async {
     if (_isLoading) return;
 
@@ -48,7 +61,7 @@ class RocketProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final fetchedRockets = await _repository.getAllRockets();
+      final fetchedRockets = await _getRocketsUseCase.execute();
       _rockets = fetchedRockets;
       _applyFilters();
     } catch (e) {
@@ -60,11 +73,12 @@ class RocketProvider extends ChangeNotifier {
     }
   }
 
-  /// Searches rockets by name or type
+  /// Searches rockets by name or type using Clean Architecture use case
   Future<void> searchRockets(String query) async {
     _searchQuery = query.trim();
     
     if (_searchQuery.isEmpty) {
+      _filteredRockets = [];
       _applyFilters();
       notifyListeners();
       return;
@@ -75,7 +89,9 @@ class RocketProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final searchResults = await _repository.searchRockets(_searchQuery);
+      final searchResults = await _searchRocketsUseCase.execute(
+        SearchRocketsParams(searchTerm: _searchQuery),
+      );
       _filteredRockets = searchResults;
     } catch (e) {
       _error = _getErrorMessage(e);
@@ -132,7 +148,7 @@ class RocketProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Gets a specific rocket by ID
+  /// Gets a specific rocket by ID using Clean Architecture use case
   Future<RocketEntity?> getRocketById(String id) async {
     try {
       // First check if rocket is already in memory
@@ -142,9 +158,11 @@ class RocketProvider extends ChangeNotifier {
       );
       return existingRocket;
     } catch (e) {
-      // If not in memory, fetch from repository
+      // If not in memory, fetch using use case
       try {
-        return await _repository.getRocketById(id);
+        return await _getRocketByIdUseCase.execute(
+          GetRocketByIdParams(id: id),
+        );
       } catch (e) {
         return null;
       }

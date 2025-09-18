@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:sizer/sizer.dart';
 import 'package:get/get.dart';
 
@@ -8,7 +7,7 @@ import '../../core/utils/spacing.dart';
 import '../../core/utils/typography.dart';
 import '../../domain/entities/capsule_entity.dart';
 import '../../domain/entities/launch_entity.dart';
-import '../providers/launch_provider.dart';
+import '../../data/repositories/launch_repository_impl.dart';
 import '../widgets/common/glass_background.dart';
 import '../widgets/common/custom_app_bar.dart';
 
@@ -29,11 +28,15 @@ class CapsuleDetailScreen extends StatefulWidget {
 class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
   List<LaunchEntity> _launches = [];
   bool _isLoadingLaunches = false;
+  final _launchRepository = LaunchRepositoryImpl();
 
   @override
   void initState() {
     super.initState();
-    _fetchLaunchDetails();
+    // Defer the launch details fetch until after the build is complete
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchLaunchDetails();
+    });
   }
 
   // Fetch launch details for the capsule's launches
@@ -43,33 +46,33 @@ class _CapsuleDetailScreenState extends State<CapsuleDetailScreen> {
     setState(() => _isLoadingLaunches = true);
 
     try {
-      final launchProvider = context.read<LaunchProvider>();
-      
-      // Fetch all launches if not already loaded
-      if (launchProvider.launches.isEmpty) {
-        await launchProvider.fetchLaunches();
-      }
+      // Fetch all launches directly from repository to avoid provider issues
+      final allLaunches = await _launchRepository.getLaunchesWithPagination(limit: 100);
 
       // Filter launches that match this capsule's launch IDs
       // Note: We'll use flight number as identifier since launch IDs might not match directly
-      final capsuleLaunches = launchProvider.launches
+      final capsuleLaunches = allLaunches
           .where((launch) => widget.capsule.launches.any((launchId) => 
               launchId.contains(launch.flightNumber.toString()) || 
               launch.flightNumber.toString().contains(launchId)))
           .toList();
 
-      setState(() {
-        _launches = capsuleLaunches;
-        _isLoadingLaunches = false;
-      });
+      if (mounted) {
+        setState(() {
+          _launches = capsuleLaunches;
+          _isLoadingLaunches = false;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoadingLaunches = false);
-      Get.snackbar(
-        'Error',
-        'Failed to load launch details',
-        backgroundColor: AppColors.errorRed,
-        colorText: Colors.white,
-      );
+      if (mounted) {
+        setState(() => _isLoadingLaunches = false);
+        Get.snackbar(
+          'Error',
+          'Failed to load launch details',
+          backgroundColor: AppColors.errorRed,
+          colorText: Colors.white,
+        );
+      }
     }
   }
 
